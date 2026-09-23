@@ -34,6 +34,11 @@ button {
 }
 
 
+/* =====================================================
+   DESKTOP ADMIN DASHBOARD
+===================================================== */
+
+
 /* SIDEBAR */
 
 .sidebar {
@@ -514,7 +519,29 @@ tr:last-child td {
 }
 
 
-/* MOBILE */
+/* =====================================================
+   MOBILE APP
+===================================================== */
+
+/*
+   IMPORTANT:
+   The mobile interface is NOT a smaller version
+   of the desktop dashboard.
+
+   On phones:
+   - desktop dashboard disappears
+   - mobile app appears
+   - touch-friendly layout is used
+*/
+
+.mobile-app {
+    display: none;
+}
+
+
+/* =====================================================
+   TABLET / SMALL DESKTOP
+===================================================== */
 
 @media (max-width: 900px) {
 
@@ -541,54 +568,300 @@ tr:last-child td {
 }
 
 
+/* =====================================================
+   MOBILE
+===================================================== */
+
 @media (max-width: 650px) {
 
-    .sidebar {
-        width: 65px;
-        padding: 15px 8px;
-    }
+    /*
+       HIDE THE DESKTOP SYSTEM COMPLETELY
+    */
 
-    .brand {
-        justify-content: center;
-        padding: 5px 0 25px;
-    }
-
-    .brand > div:last-child,
-    .nav-button:not(.active)::after,
-    .nav-button span:not(:first-child),
-    .system-indicator div {
+    .app {
         display: none;
     }
 
-    .nav-button {
-        justify-content: center;
-        padding: 13px 5px;
-    }
 
-    .main {
-        margin-left: 65px;
-        width: calc(100% - 65px);
-    }
+    /*
+       SHOW THE MOBILE APP
+    */
 
-    .topbar {
-        padding: 0 18px;
-    }
-
-    .page {
-        padding: 22px 18px;
-    }
-
-    .topbar-right .time {
-        display: none;
-    }
-
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .welcome {
-        align-items: flex-start;
-        gap: 15px;
+    .mobile-app {
+        display: flex;
         flex-direction: column;
+        min-height: 100vh;
+        min-height: 100dvh;
+        background: var(--bg);
+    }
+
+
+    /* MOBILE HEADER */
+
+    .mobile-header {
+        background: var(--sidebar);
+        color: white;
+        padding: 18px 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .mobile-brand {
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: 1px;
+    }
+
+    .mobile-subtitle {
+        color: #91a0ad;
+        font-size: 11px;
+        margin-top: 3px;
+    }
+
+    .mobile-status {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 9px;
+        font-weight: bold;
+        letter-spacing: 0.5px;
+    }
+
+    .mobile-status span {
+        width: 7px;
+        height: 7px;
+        background: var(--success);
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+
+    /* MOBILE MAIN CONTENT */
+
+    .mobile-content {
+        flex: 1;
+        padding: 25px 17px 95px;
+        width: 100%;
+    }
+
+
+    /* WELCOME */
+
+    .mobile-welcome {
+        margin-bottom: 22px;
+    }
+
+    .mobile-welcome p {
+        color: var(--muted);
+        font-size: 13px;
+        margin-bottom: 5px;
+    }
+
+    .mobile-welcome h1 {
+        color: var(--text);
+        font-size: 28px;
+        line-height: 1.15;
+        font-weight: 700;
+    }
+
+
+    /* EMERGENCY BUTTON */
+
+    .emergency-button {
+        width: 100%;
+        min-height: 92px;
+        border: none;
+        border-radius: 16px;
+        background: var(--danger);
+        color: white;
+        padding: 18px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        text-align: left;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(229, 72, 77, 0.20);
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .emergency-button:active {
+        transform: scale(0.98);
+    }
+
+    .emergency-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.16);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 27px;
+        flex-shrink: 0;
+    }
+
+    .emergency-button strong {
+        display: block;
+        font-size: 15px;
+        letter-spacing: 0.2px;
+    }
+
+    .emergency-button small {
+        display: block;
+        margin-top: 5px;
+        font-size: 11px;
+        opacity: 0.88;
+        line-height: 1.3;
+    }
+
+
+    /* MOBILE CARDS */
+
+    .mobile-card {
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 15px;
+        margin-top: 17px;
+        padding: 17px;
+    }
+
+    .mobile-card-title {
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 12px;
+    }
+
+    .mobile-card-title > span {
+        color: var(--success);
+        font-size: 11px;
+    }
+
+
+    /* STATUS */
+
+    .mobile-status-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        padding: 12px 0;
+        border-top: 1px solid var(--border);
+        font-size: 12px;
+    }
+
+    .mobile-status-row span {
+        color: var(--muted);
+    }
+
+    .mobile-status-row strong {
+        color: var(--success);
+        font-size: 12px;
+    }
+
+
+    /* LOCATION */
+
+    .location-box {
+        background: #f7f8fa;
+        border-radius: 10px;
+        padding: 13px;
+    }
+
+    .location-box strong {
+        display: block;
+        color: var(--text);
+        font-size: 13px;
+    }
+
+    .location-box small {
+        display: block;
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.4;
+        margin-top: 4px;
+    }
+
+
+    /* BOTTOM NAVIGATION */
+
+    .mobile-nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 68px;
+        padding-bottom: env(safe-area-inset-bottom);
+        background: white;
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .mobile-nav-item {
+        flex: 1;
+        height: 100%;
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .mobile-nav-item span {
+        font-size: 20px;
+        line-height: 1;
+    }
+
+    .mobile-nav-item small {
+        font-size: 9px;
+        font-weight: 600;
+    }
+
+    .mobile-nav-item.active {
+        color: var(--accent);
+    }
+
+    .mobile-nav-item:active {
+        background: #f7f9fb;
+    }
+}
+
+
+/* =====================================================
+   VERY SMALL PHONES
+===================================================== */
+
+@media (max-width: 380px) {
+
+    .mobile-content {
+        padding-left: 14px;
+        padding-right: 14px;
+    }
+
+    .mobile-welcome h1 {
+        font-size: 25px;
+    }
+
+    .emergency-button {
+        min-height: 86px;
+        padding: 15px;
+    }
+
+    .emergency-icon {
+        width: 43px;
+        height: 43px;
+        font-size: 24px;
     }
 }
