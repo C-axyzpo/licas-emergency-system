@@ -1,9 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>LIKAS Emergency Alarm and Response System</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
 <body>
 
-    <!-- your LIKAS dashboard -->
+    <header>
+        <h1>LIKAS</h1>
+        <p>Emergency Alarm and Response System</p>
+    </header>
 
+    <main>
+
+        <section class="dashboard-cards">
+
+            <div class="card">
+                <h2>Active Emergencies</h2>
+                <p id="activeEmergencies">0</p>
+            </div>
+
+            <div class="card">
+                <h2>Online Units</h2>
+                <p id="onlineUnits">0</p>
+            </div>
+
+            <div class="card">
+                <h2>User Reports</h2>
+                <p id="userReports">0</p>
+            </div>
+
+            <div class="card">
+                <h2>External Alerts</h2>
+                <p id="externalAlerts">0</p>
+            </div>
+
+        </section>
+
+
+        <section>
+            <h2>Emergency Events</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Unit</th>
+                        <th>Emergency</th>
+                        <th>Severity</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody id="emergencyTable">
+                    <tr>
+                        <td colspan="5">No emergency events</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+
+        <section>
+            <h2>User Reports</h2>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Location</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody id="reportsTable">
+                    <tr>
+                        <td colspan="4">No reports</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+
+        <section>
+            <h2>Official Alerts</h2>
+
+            <div id="officialAlerts">
+                <p>No official alerts.</p>
+            </div>
+        </section>
+
+    </main>
+
+
+    <!-- Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js"></script>
+
+    <!-- Our JavaScript -->
+    <script src="./app.js"></script>
 
 </body>
 </html>
