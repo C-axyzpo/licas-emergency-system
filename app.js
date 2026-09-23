@@ -1,6 +1,23 @@
-console.log("LIKAS Dashboard loaded successfully.");
+const SUPABASE_URL = "https://gqnyqaxwgfkdglkjuidc.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Ld7RcE6is_Ln_iAcqMYVLg_MZw58l3c";
 
-document.getElementById("activeEmergencies").textContent = "0";
-document.getElementById("onlineUnits").textContent = "0";
-document.getElementById("userReports").textContent = "0";
-document.getElementById("externalAlerts").textContent = "0";
+const supabaseClient = supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+async function testConnection() {
+    const { data, error } = await supabaseClient
+        .from("units")
+        .select("*");
+
+    if (error) {
+        console.error("Connection failed:", error);
+        return;
+    }
+
+    console.log("Supabase connected!");
+    console.log("Units:", data);
+}
+
+testConnection();
