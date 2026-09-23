@@ -3,107 +3,356 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>LIKAS Emergency Alarm and Response System</title>
-
+    <title>LIKAS | Emergency Response System</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <header>
-        <h1>LIKAS</h1>
-        <p>Emergency Alarm and Response System</p>
-    </header>
+<div class="app">
 
-    <main>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
 
-        <section class="dashboard-cards">
+        <div class="brand">
+            <div class="brand-mark">L</div>
+            <div>
+                <h1>LIKAS</h1>
+                <span>Emergency Response</span>
+            </div>
+        </div>
 
-            <div class="card">
-                <h2>Active Emergencies</h2>
-                <p id="activeEmergencies">0</p>
+        <nav class="navigation">
+
+            <button class="nav-button active" data-page="overview">
+                <span>◉</span>
+                Overview
+            </button>
+
+            <button class="nav-button" data-page="emergencies">
+                <span>🚨</span>
+                Emergencies
+            </button>
+
+            <button class="nav-button" data-page="units">
+                <span>◈</span>
+                Monitoring Units
+            </button>
+
+            <button class="nav-button" data-page="reports">
+                <span>▤</span>
+                User Reports
+            </button>
+
+            <button class="nav-button" data-page="alerts">
+                <span>⚠</span>
+                Official Alerts
+            </button>
+
+        </nav>
+
+        <div class="sidebar-bottom">
+            <div class="system-indicator">
+                <span class="status-dot"></span>
+                <div>
+                    <strong>System Online</strong>
+                    <small>Monitoring active</small>
+                </div>
+            </div>
+        </div>
+
+    </aside>
+
+
+    <!-- MAIN -->
+    <main class="main">
+
+        <!-- TOP BAR -->
+        <header class="topbar">
+
+            <div>
+                <p class="eyebrow">EMERGENCY MONITORING</p>
+                <h2 id="pageTitle">Overview</h2>
             </div>
 
-            <div class="card">
-                <h2>Online Units</h2>
-                <p id="onlineUnits">0</p>
+            <div class="topbar-right">
+
+                <div class="system-status">
+                    <span class="status-dot"></span>
+                    OPERATIONAL
+                </div>
+
+                <div id="currentTime" class="time">
+                    --:--:--
+                </div>
+
             </div>
 
-            <div class="card">
-                <h2>User Reports</h2>
-                <p id="userReports">0</p>
+        </header>
+
+
+        <!-- ================= OVERVIEW ================= -->
+
+        <section id="overview" class="page active-page">
+
+            <div class="welcome">
+                <div>
+                    <h3>System Overview</h3>
+                    <p>
+                        Real-time monitoring of emergency events,
+                        response units, reports, and official alerts.
+                    </p>
+                </div>
+
+                <button class="refresh-button" onclick="loadDashboard()">
+                    ↻ Refresh
+                </button>
             </div>
 
-            <div class="card">
-                <h2>External Alerts</h2>
-                <p id="externalAlerts">0</p>
+
+            <!-- STAT CARDS -->
+
+            <div class="stats-grid">
+
+                <div class="stat-card danger">
+                    <div class="stat-icon">🚨</div>
+                    <div>
+                        <span>Active Emergencies</span>
+                        <strong id="activeEmergencies">0</strong>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">◈</div>
+                    <div>
+                        <span>Online Units</span>
+                        <strong id="onlineUnits">0</strong>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">▤</div>
+                    <div>
+                        <span>User Reports</span>
+                        <strong id="userReports">0</strong>
+                    </div>
+                </div>
+
+                <div class="stat-card warning">
+                    <div class="stat-icon">⚠</div>
+                    <div>
+                        <span>Official Alerts</span>
+                        <strong id="externalAlerts">0</strong>
+                    </div>
+                </div>
+
+            </div>
+
+
+            <!-- TWO COLUMN -->
+
+            <div class="content-grid">
+
+                <div class="panel">
+
+                    <div class="panel-header">
+                        <div>
+                            <p class="eyebrow">CURRENT STATUS</p>
+                            <h3>Emergency Monitoring</h3>
+                        </div>
+                    </div>
+
+                    <div id="overviewEmergency">
+                        <div class="empty-state">
+                            <div class="empty-icon">✓</div>
+                            <strong>No active emergencies</strong>
+                            <span>All monitored areas are currently clear.</span>
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <div class="panel">
+
+                    <div class="panel-header">
+                        <div>
+                            <p class="eyebrow">SYSTEM</p>
+                            <h3>Monitoring Status</h3>
+                        </div>
+                    </div>
+
+                    <div class="monitor-status">
+
+                        <div class="monitor-row">
+                            <span>Connected Units</span>
+                            <strong id="monitorUnits">0</strong>
+                        </div>
+
+                        <div class="monitor-row">
+                            <span>System Status</span>
+                            <strong class="online-text">Operational</strong>
+                        </div>
+
+                        <div class="monitor-row">
+                            <span>Last Update</span>
+                            <strong id="lastUpdate">Just now</strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
             </div>
 
         </section>
 
 
-        <section>
-            <h2>Emergency Events</h2>
+        <!-- ================= EMERGENCIES ================= -->
 
-            <table>
-                <thead>
-                    <tr>
-                        <th>Unit</th>
-                        <th>Emergency</th>
-                        <th>Severity</th>
-                        <th>Location</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
+        <section id="emergencies" class="page">
 
-                <tbody id="emergencyTable">
-                    <tr>
-                        <td colspan="5">No emergency events</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-
-
-        <section>
-            <h2>User Reports</h2>
-
-            <table>
-                <thead>
-                    <tr>
-                        <th>Type</th>
-                        <th>Location</th>
-                        <th>Description</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-
-                <tbody id="reportsTable">
-                    <tr>
-                        <td colspan="4">No reports</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-
-
-        <section>
-            <h2>Official Alerts</h2>
-
-            <div id="officialAlerts">
-                <p>No official alerts.</p>
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">INCIDENT MANAGEMENT</p>
+                    <h3>Emergency Events</h3>
+                </div>
             </div>
+
+            <div class="panel">
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Unit</th>
+                                <th>Emergency</th>
+                                <th>Severity</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="emergencyTable">
+
+                            <tr>
+                                <td colspan="5" class="table-empty">
+                                    No emergency events recorded.
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= UNITS ================= -->
+
+        <section id="units" class="page">
+
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">FIELD NETWORK</p>
+                    <h3>Monitoring Units</h3>
+                </div>
+            </div>
+
+            <div id="unitsContainer" class="units-grid">
+
+                <div class="empty-state panel-empty">
+                    No monitoring units found.
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= REPORTS ================= -->
+
+        <section id="reports" class="page">
+
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">COMMUNITY INPUT</p>
+                    <h3>User Reports</h3>
+                </div>
+            </div>
+
+            <div class="panel">
+
+                <div class="table-container">
+
+                    <table>
+
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Type</th>
+                                <th>Location</th>
+                                <th>Description</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="reportsTable">
+
+                            <tr>
+                                <td colspan="5" class="table-empty">
+                                    No user reports received.
+                                </td>
+                            </tr>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================= ALERTS ================= -->
+
+        <section id="alerts" class="page">
+
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">EXTERNAL INFORMATION</p>
+                    <h3>Official Alerts</h3>
+                </div>
+            </div>
+
+            <div id="alertsContainer">
+
+                <div class="empty-state panel-empty">
+                    No official alerts available.
+                </div>
+
+            </div>
+
         </section>
 
     </main>
 
+</div>
 
-    <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <!-- Our JavaScript -->
-    <script src="./app.js"></script>
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- LIKAS JAVASCRIPT -->
+<script src="./app.js"></script>
 
 </body>
 </html>
