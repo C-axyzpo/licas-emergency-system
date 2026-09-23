@@ -1,5 +1,3 @@
-console.log("app.js loaded");
-
 console.log("Supabase library:", supabase);
 
 const SUPABASE_URL = "https://gqnyqaxwgfkdglkjuidc.supabase.co";
