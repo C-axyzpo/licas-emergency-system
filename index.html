@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIKAS | Emergency Response System</title>
+
+    <title>LICAS | Emergency Response System</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
@@ -11,16 +13,16 @@
 
 <!-- =====================================================
      MOBILE APP
-     Shown only on phone-sized screens
 ===================================================== -->
 
 <div id="mobileApp" class="mobile-app">
 
-    <!-- MOBILE HEADER -->
+    <!-- HEADER -->
     <header class="mobile-header">
 
         <div>
-            <div class="mobile-brand">LIKAS</div>
+            <div class="mobile-brand">LICAS</div>
+
             <div class="mobile-subtitle">
                 Emergency Response
             </div>
@@ -34,22 +36,25 @@
     </header>
 
 
-    <!-- MOBILE CONTENT -->
-    <main class="mobile-content">
+    <!-- =================================================
+         MOBILE HOME
+    ================================================== -->
+
+    <main
+        id="mobileHomePage"
+        class="mobile-page active-mobile-page"
+    >
 
         <section class="mobile-welcome">
 
             <p>Emergency assistance</p>
 
-            <h1>
-                How can we help?
-            </h1>
+            <h1>How can we help?</h1>
 
         </section>
 
 
-        <!-- REPORT BUTTON -->
-
+        <!-- REPORT -->
         <button
             class="emergency-button"
             id="mobileReportButton"
@@ -61,29 +66,23 @@
             </span>
 
             <span>
-
-                <strong>
-                    REPORT EMERGENCY
-                </strong>
+                <strong>REPORT EMERGENCY</strong>
 
                 <small>
                     Send an alert to administrators
                 </small>
-
             </span>
 
         </button>
 
 
         <!-- SYSTEM STATUS -->
-
         <section class="mobile-card">
 
             <div class="mobile-card-title">
                 <span>●</span>
                 System Status
             </div>
-
 
             <div class="mobile-status-row">
 
@@ -97,14 +96,13 @@
 
             </div>
 
-
             <div class="mobile-status-row">
 
                 <span>
                     Connection
                 </span>
 
-                <strong>
+                <strong id="mobileConnectionStatus">
                     Online
                 </strong>
 
@@ -113,23 +111,60 @@
         </section>
 
 
-        <!-- LOCATION -->
+        <!-- OFFICIAL ALERTS -->
+        <button
+            id="mobileAlertsButton"
+            class="mobile-card mobile-action-card"
+            type="button"
+        >
 
+            <div class="mobile-card-title">
+
+                <span class="alert-icon">
+                    📢
+                </span>
+
+                <span>
+                    Official Alerts
+                </span>
+
+                <span class="mobile-arrow">
+                    ›
+                </span>
+
+            </div>
+
+            <div class="mobile-alert-preview">
+
+                <strong id="mobileAlertPreviewTitle">
+                    Checking official alerts...
+                </strong>
+
+                <small id="mobileAlertPreviewText">
+                    Loading PHIVOLCS / NDRRMC advisories.
+                </small>
+
+            </div>
+
+        </button>
+
+
+        <!-- LOCATION -->
         <section class="mobile-card">
 
             <div class="mobile-card-title">
-                📍 Your Location
+                <span>📍</span>
+                <span>Your Location</span>
             </div>
-
 
             <div class="location-box">
 
                 <strong>
-                    Location not set
+                    Location selected during reporting
                 </strong>
 
                 <small>
-                    Select your location when reporting.
+                    Your location is used only when submitting an emergency report.
                 </small>
 
             </div>
@@ -139,11 +174,301 @@
     </main>
 
 
-    <!-- MOBILE NAVIGATION -->
+    <!-- =================================================
+         MOBILE REPORT PAGE
+    ================================================== -->
+
+    <main
+        id="mobileReportPage"
+        class="mobile-page"
+    >
+
+        <section class="mobile-page-heading">
+
+            <button
+                id="mobileReportBack"
+                class="mobile-back-button"
+                type="button"
+            >
+                ‹
+            </button>
+
+            <div>
+
+                <p>Emergency assistance</p>
+
+                <h1>
+                    Report Emergency
+                </h1>
+
+            </div>
+
+        </section>
+
+
+        <form
+            id="mobileReportForm"
+            class="mobile-form"
+        >
+
+            <!-- TYPE -->
+
+            <label class="mobile-field">
+
+                <span>
+                    Emergency Type
+                </span>
+
+                <select
+                    id="mobileEmergencyType"
+                    required
+                >
+
+                    <option value="" selected disabled>
+                        Select emergency type
+                    </option>
+
+                    <option value="Fire">
+                        Fire
+                    </option>
+
+                    <option value="Medical">
+                        Medical
+                    </option>
+
+                    <option value="Earthquake">
+                        Earthquake
+                    </option>
+
+                    <option value="Security">
+                        Security
+                    </option>
+
+                    <option value="Other">
+                        Other
+                    </option>
+
+                </select>
+
+            </label>
+
+
+            <!-- LOCATION -->
+
+            <label class="mobile-field">
+
+                <span>
+                    Location
+                </span>
+
+                <select
+                    id="mobileLocation"
+                    required
+                >
+
+                    <option value="" selected disabled>
+                        Select location
+                    </option>
+
+                    <option value="Main Hallway">
+                        Main Hallway
+                    </option>
+
+                    <option value="Classroom Area">
+                        Classroom Area
+                    </option>
+
+                    <option value="Laboratory">
+                        Laboratory
+                    </option>
+
+                    <option value="Cafeteria">
+                        Cafeteria
+                    </option>
+
+                    <option value="Other">
+                        Other
+                    </option>
+
+                </select>
+
+            </label>
+
+
+            <!-- SEVERITY -->
+
+            <label class="mobile-field">
+
+                <span>
+                    Severity
+                </span>
+
+                <select
+                    id="mobileSeverity"
+                    required
+                >
+
+                    <option value="" selected disabled>
+                        Select severity
+                    </option>
+
+                    <option value="Low">
+                        Low
+                    </option>
+
+                    <option value="Moderate">
+                        Moderate
+                    </option>
+
+                    <option value="Critical">
+                        Critical
+                    </option>
+
+                </select>
+
+            </label>
+
+
+            <!-- DESCRIPTION -->
+
+            <label class="mobile-field">
+
+                <span>
+                    Description
+                </span>
+
+                <textarea
+                    id="mobileDescription"
+                    rows="5"
+                    placeholder="Describe what happened..."
+                ></textarea>
+
+            </label>
+
+
+            <!-- NAME -->
+
+            <label class="mobile-field">
+
+                <span>
+                    Your Name
+                    <small>(Optional)</small>
+                </span>
+
+                <input
+                    type="text"
+                    id="mobileReporterName"
+                    placeholder="Enter your name"
+                >
+
+            </label>
+
+
+            <button
+                type="submit"
+                id="mobileSubmitReport"
+                class="mobile-submit-button"
+            >
+                SEND EMERGENCY REPORT
+            </button>
+
+        </form>
+
+
+        <!-- REPORT RESULT -->
+
+        <div
+            id="mobileReportResult"
+            class="mobile-result"
+            hidden
+        ></div>
+
+    </main>
+
+
+    <!-- =================================================
+         MOBILE OFFICIAL ALERTS
+    ================================================== -->
+
+    <main
+        id="mobileAlertsPage"
+        class="mobile-page"
+    >
+
+        <section class="mobile-page-heading">
+
+            <button
+                id="mobileAlertsBack"
+                class="mobile-back-button"
+                type="button"
+            >
+                ‹
+            </button>
+
+            <div>
+
+                <p>Official information</p>
+
+                <h1>
+                    Official Alerts
+                </h1>
+
+            </div>
+
+        </section>
+
+
+        <section class="mobile-card">
+
+            <div class="mobile-card-title">
+
+                <span>
+                    📢
+                </span>
+
+                <span>
+                    Official Advisories
+                </span>
+
+            </div>
+
+
+            <div
+                id="mobileAlertsList"
+                class="mobile-alerts-list"
+            >
+
+                <div class="mobile-empty-alerts">
+
+                    <div>
+                        ...
+                    </div>
+
+                    <strong>
+                        Loading official alerts
+                    </strong>
+
+                    <span>
+                        Checking the LICAS alert database.
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- =================================================
+         MOBILE NAVIGATION
+    ================================================== -->
 
     <nav class="mobile-nav">
 
         <button
+            id="mobileHomeNav"
             class="mobile-nav-item active"
             type="button"
         >
@@ -158,8 +483,8 @@
 
 
         <button
-            class="mobile-nav-item"
             id="mobileReportNav"
+            class="mobile-nav-item"
             type="button"
         >
 
@@ -173,14 +498,15 @@
 
 
         <button
+            id="mobileAlertsNav"
             class="mobile-nav-item"
             type="button"
         >
 
-            <span>ⓘ</span>
+            <span>📢</span>
 
             <small>
-                Info
+                Alerts
             </small>
 
         </button>
@@ -198,6 +524,7 @@
 <div class="app">
 
     <!-- SIDEBAR -->
+
     <aside class="sidebar">
 
         <div class="brand">
@@ -209,7 +536,7 @@
             <div>
 
                 <h1>
-                    LIKAS
+                    LICAS
                 </h1>
 
                 <span>
@@ -231,7 +558,6 @@
                 Overview
             </button>
 
-
             <button
                 class="nav-button"
                 data-page="emergencies"
@@ -239,7 +565,6 @@
                 <span>🚨</span>
                 Emergencies
             </button>
-
 
             <button
                 class="nav-button"
@@ -249,7 +574,6 @@
                 Monitoring Units
             </button>
 
-
             <button
                 class="nav-button"
                 data-page="reports"
@@ -257,7 +581,6 @@
                 <span>▤</span>
                 User Reports
             </button>
-
 
             <button
                 class="nav-button"
@@ -295,15 +618,15 @@
     </aside>
 
 
-
     <!-- MAIN -->
+
     <main class="main">
 
-        <!-- TOP BAR -->
+        <!-- TOPBAR -->
 
         <header class="topbar">
 
-            <div>
+            <div class="topbar-left">
 
                 <p class="eyebrow">
                     EMERGENCY MONITORING
@@ -326,7 +649,6 @@
 
                 </div>
 
-
                 <div
                     id="currentTime"
                     class="time"
@@ -339,8 +661,9 @@
         </header>
 
 
-
-        <!-- ================= OVERVIEW ================= -->
+        <!-- =================================================
+             OVERVIEW
+        ================================================== -->
 
         <section
             id="overview"
@@ -365,7 +688,8 @@
 
                 <button
                     class="refresh-button"
-                    onclick="loadDashboard()"
+                    id="refreshDashboard"
+                    type="button"
                 >
                     ↻ Refresh
                 </button>
@@ -373,8 +697,7 @@
             </div>
 
 
-
-            <!-- STAT CARDS -->
+            <!-- STATISTICS -->
 
             <div class="stats-grid">
 
@@ -464,8 +787,7 @@
             </div>
 
 
-
-            <!-- TWO COLUMN -->
+            <!-- TWO COLUMNS -->
 
             <div class="content-grid">
 
@@ -473,17 +795,13 @@
 
                     <div class="panel-header">
 
-                        <div>
+                        <p class="eyebrow">
+                            CURRENT STATUS
+                        </p>
 
-                            <p class="eyebrow">
-                                CURRENT STATUS
-                            </p>
-
-                            <h3>
-                                Emergency Monitoring
-                            </h3>
-
-                        </div>
+                        <h3>
+                            Emergency Monitoring
+                        </h3>
 
                     </div>
 
@@ -511,22 +829,17 @@
                 </div>
 
 
-
                 <div class="panel">
 
                     <div class="panel-header">
 
-                        <div>
+                        <p class="eyebrow">
+                            SYSTEM
+                        </p>
 
-                            <p class="eyebrow">
-                                SYSTEM
-                            </p>
-
-                            <h3>
-                                Monitoring Status
-                            </h3>
-
-                        </div>
+                        <h3>
+                            Monitoring Status
+                        </h3>
 
                     </div>
 
@@ -580,8 +893,9 @@
         </section>
 
 
-
-        <!-- ================= EMERGENCIES ================= -->
+        <!-- =================================================
+             EMERGENCIES
+        ================================================== -->
 
         <section
             id="emergencies"
@@ -590,17 +904,13 @@
 
             <div class="section-heading">
 
-                <div>
+                <p class="eyebrow">
+                    INCIDENT MANAGEMENT
+                </p>
 
-                    <p class="eyebrow">
-                        INCIDENT MANAGEMENT
-                    </p>
-
-                    <h3>
-                        Emergency Events
-                    </h3>
-
-                </div>
+                <h3>
+                    Emergency Events
+                </h3>
 
             </div>
 
@@ -664,8 +974,9 @@
         </section>
 
 
-
-        <!-- ================= UNITS ================= -->
+        <!-- =================================================
+             UNITS
+        ================================================== -->
 
         <section
             id="units"
@@ -674,17 +985,13 @@
 
             <div class="section-heading">
 
-                <div>
+                <p class="eyebrow">
+                    FIELD NETWORK
+                </p>
 
-                    <p class="eyebrow">
-                        FIELD NETWORK
-                    </p>
-
-                    <h3>
-                        Monitoring Units
-                    </h3>
-
-                </div>
+                <h3>
+                    Monitoring Units
+                </h3>
 
             </div>
 
@@ -703,8 +1010,9 @@
         </section>
 
 
-
-        <!-- ================= REPORTS ================= -->
+        <!-- =================================================
+             REPORTS
+        ================================================== -->
 
         <section
             id="reports"
@@ -713,17 +1021,13 @@
 
             <div class="section-heading">
 
-                <div>
+                <p class="eyebrow">
+                    COMMUNITY INPUT
+                </p>
 
-                    <p class="eyebrow">
-                        COMMUNITY INPUT
-                    </p>
-
-                    <h3>
-                        User Reports
-                    </h3>
-
-                </div>
+                <h3>
+                    User Reports
+                </h3>
 
             </div>
 
@@ -787,8 +1091,9 @@
         </section>
 
 
-
-        <!-- ================= ALERTS ================= -->
+        <!-- =================================================
+             OFFICIAL ALERTS
+        ================================================== -->
 
         <section
             id="alerts"
@@ -797,17 +1102,13 @@
 
             <div class="section-heading">
 
-                <div>
+                <p class="eyebrow">
+                    EXTERNAL INFORMATION
+                </p>
 
-                    <p class="eyebrow">
-                        EXTERNAL INFORMATION
-                    </p>
-
-                    <h3>
-                        Official Alerts
-                    </h3>
-
-                </div>
+                <h3>
+                    Official Alerts
+                </h3>
 
             </div>
 
@@ -827,13 +1128,9 @@
 </div>
 
 
-
 <!-- SUPABASE -->
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-
-<!-- LIKAS JAVASCRIPT -->
 
 <script src="./app.js"></script>
 
