@@ -8,21 +8,38 @@ const supabaseClient = supabase.createClient(
     SUPABASE_KEY
 );
 
-async function testDatabase() {
 
-    console.log("Testing LIKAS database...");
+// =========================
+// LOAD UNITS
+// =========================
+
+async function loadUnits() {
+
+    console.log("Loading LIKAS units...");
 
     const { data, error } = await supabaseClient
         .from("units")
         .select("*");
 
     if (error) {
-        console.error("DATABASE ERROR:", error);
+        console.error("UNIT DATABASE ERROR:", error);
         return;
     }
 
-    console.log("DATABASE CONNECTED!");
-    console.log(data);
+    console.log("Units found:", data);
+
+    // Count online units
+    const onlineCount = data.filter(
+        unit => unit.status === "online"
+    ).length;
+
+    // Update dashboard number
+    document.getElementById("onlineUnits").textContent = onlineCount;
 }
 
-testDatabase();
+
+// =========================
+// START
+// =========================
+
+loadUnits();
