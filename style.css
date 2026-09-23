@@ -154,7 +154,9 @@ button {
 }
 
 
-/* TOPBAR */
+/* =====================================================
+   TOPBAR
+===================================================== */
 
 .topbar {
     height: 82px;
@@ -164,6 +166,12 @@ button {
     align-items: center;
     justify-content: space-between;
     padding: 0 36px;
+}
+
+.topbar-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .eyebrow {
@@ -176,6 +184,7 @@ button {
 
 .topbar h2 {
     font-size: 22px;
+    line-height: 1;
 }
 
 .topbar-right {
@@ -185,9 +194,12 @@ button {
 }
 
 .system-status {
+    display: flex;
+    align-items: center;
     color: var(--success);
     font-size: 11px;
     font-weight: bold;
+    white-space: nowrap;
 }
 
 .status-dot {
@@ -197,11 +209,31 @@ button {
     background: var(--success);
     border-radius: 50%;
     margin-right: 6px;
+    flex-shrink: 0;
 }
 
 .time {
     color: var(--muted);
     font-size: 13px;
+    white-space: nowrap;
+}
+
+
+/*
+   Hide accidental administrator/help/profile elements
+   that may exist in an older desktop HTML version.
+*/
+
+.topbar .administrator,
+.topbar .admin,
+.topbar .profile,
+.topbar .user,
+.topbar .help,
+.topbar .question,
+.topbar .question-mark,
+.topbar .admin-panel,
+.topbar .user-panel {
+    display: none !important;
 }
 
 
@@ -523,17 +555,6 @@ tr:last-child td {
    MOBILE APP
 ===================================================== */
 
-/*
-   IMPORTANT:
-   The mobile interface is NOT a smaller version
-   of the desktop dashboard.
-
-   On phones:
-   - desktop dashboard disappears
-   - mobile app appears
-   - touch-friendly layout is used
-*/
-
 .mobile-app {
     display: none;
 }
@@ -565,6 +586,10 @@ tr:last-child td {
     .units-grid {
         grid-template-columns: 1fr;
     }
+
+    .topbar {
+        padding: 0 25px;
+    }
 }
 
 
@@ -574,18 +599,9 @@ tr:last-child td {
 
 @media (max-width: 650px) {
 
-    /*
-       HIDE THE DESKTOP SYSTEM COMPLETELY
-    */
-
     .app {
         display: none;
     }
-
-
-    /*
-       SHOW THE MOBILE APP
-    */
 
     .mobile-app {
         display: flex;
@@ -601,7 +617,7 @@ tr:last-child td {
     .mobile-header {
         background: var(--sidebar);
         color: white;
-        padding: 18px 18px;
+        padding: 18px;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -637,7 +653,7 @@ tr:last-child td {
     }
 
 
-    /* MOBILE MAIN CONTENT */
+    /* MOBILE CONTENT */
 
     .mobile-content {
         flex: 1;
@@ -734,11 +750,13 @@ tr:last-child td {
         align-items: center;
         gap: 7px;
         margin-bottom: 12px;
+        line-height: 1.2;
     }
 
     .mobile-card-title > span {
         color: var(--success);
         font-size: 11px;
+        line-height: 1;
     }
 
 
