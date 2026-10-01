@@ -45,13 +45,39 @@ function formatDate(date) {
         return "Unknown";
     }
 
-    return new Date(date).toLocaleString(
+    const parsed = new Date(date);
+
+    if (isNaN(parsed.getTime())) {
+        return "Unknown";
+    }
+
+    return parsed.toLocaleString(
         "en-PH",
         {
             dateStyle: "short",
             timeStyle: "short"
         }
     );
+}
+
+
+function formatNumber(value, decimals = 1) {
+
+    if (
+        value === null ||
+        value === undefined ||
+        value === ""
+    ) {
+        return "Unavailable";
+    }
+
+    const number = Number(value);
+
+    if (isNaN(number)) {
+        return "Unavailable";
+    }
+
+    return number.toFixed(decimals);
 }
 
 
@@ -117,6 +143,11 @@ navButtons.forEach(button => {
 
         if (targetPage === "emergencies") {
             await loadEmergencyEvents();
+        }
+
+        if (targetPage === "units") {
+            await loadUnits();
+            await loadLatestSensorReadings();
         }
 
     });
@@ -187,15 +218,26 @@ async function loadUnits() {
 
     const onlineCount =
         data.filter(
-            unit => unit.status === "online"
+            unit =>
+                String(unit.status).toLowerCase() ===
+                "online"
         ).length;
 
 
-    document.getElementById("onlineUnits")
-        .textContent = onlineCount;
+    const onlineUnits =
+        document.getElementById("onlineUnits");
 
-    document.getElementById("monitorUnits")
-        .textContent = onlineCount;
+    if (onlineUnits) {
+        onlineUnits.textContent = onlineCount;
+    }
+
+
+    const monitorUnits =
+        document.getElementById("monitorUnits");
+
+    if (monitorUnits) {
+        monitorUnits.textContent = data.length;
+    }
 
 
     const container =
@@ -222,33 +264,66 @@ async function loadUnits() {
     container.innerHTML =
         data.map(unit => {
 
+            /*
+               unit.id = database primary key
+               unit.unit_id = human-readable LICAS ID
+            */
+
+            const displayUnitID =
+                unit.unit_id ||
+                `Unit ${unit.id}`;
+
+
+            const location =
+                unit.location ||
+                "Location not assigned";
+
+
+            const floor =
+                unit.floor ||
+                "";
+
+
+            const status =
+                unit.status ||
+                "offline";
+
+
             return `
-                <div class="unit-card">
+                <div
+                    class="unit-card"
+                    data-unit-id="${escapeHTML(unit.id)}"
+                >
 
                     <div class="unit-top">
 
                         <div>
 
                             <div class="unit-name">
-                                ${escapeHTML(unit.unit_name)}
+                                ${escapeHTML(displayUnitID)}
                             </div>
 
                             <div class="unit-location">
-                                ${escapeHTML(unit.location)}
+
+                                ${escapeHTML(location)}
+
                                 ${
-                                    unit.floor
-                                    ? " · " + escapeHTML(unit.floor)
+                                    floor
+                                    ? " · " +
+                                      escapeHTML(floor)
                                     : ""
                                 }
+
                             </div>
 
                         </div>
+
 
                         <div class="unit-status">
 
                             <span class="status-dot"></span>
 
-                            ${escapeHTML(unit.status)}
+                            ${escapeHTML(status)}
 
                         </div>
 
@@ -261,6 +336,19 @@ async function loadUnits() {
 
                             <span>
                                 Unit ID
+                            </span>
+
+                            <strong>
+                                ${escapeHTML(displayUnitID)}
+                            </strong>
+
+                        </div>
+
+
+                        <div class="unit-detail">
+
+                            <span>
+                                Database ID
                             </span>
 
                             <strong>
@@ -284,10 +372,368 @@ async function loadUnits() {
 
                     </div>
 
+
+                    <div class="unit-sensors">
+
+                        <div class="sensor-loading">
+                            Loading sensor data...
+                        </div>
+
+                    </div>
+
                 </div>
             `;
 
         }).join("");
+}
+
+
+// =====================================================
+// LOAD LATEST SENSOR READINGS
+// =====================================================
+
+async function loadLatestSensorReadings() {
+
+    console.log(
+        "Loading latest LICAS sensor readings..."
+    );
+
+
+    const { data, error } =
+        await supabaseClient
+            .from("sensor_readings")
+            .select("*")
+            .order(
+                "recorded_at",
+                {
+                    ascending: false
+                }
+            )
+            .limit(100);
+
+
+    if (error) {
+
+        console.error(
+            "SENSOR READINGS DATABASE ERROR:",
+            error
+        );
+
+        return;
+    }
+
+
+    if (!data || !data.length) {
+
+        console.log(
+            "No sensor readings found."
+        );
+
+        return;
+    }
+
+
+    /*
+       The results are sorted newest first.
+
+       Therefore, the first reading we encounter
+       for each unit is its latest reading.
+    */
+
+    const latestByUnit = {};
+
+
+    data.forEach(reading => {
+
+        const unitID =
+            String(reading.unit_id);
+
+
+        if (!latestByUnit[unitID]) {
+
+            latestByUnit[unitID] =
+                reading;
+
+        }
+
+    });
+
+
+    console.log(
+        "Latest sensor readings:",
+        latestByUnit
+    );
+
+
+    /*
+       Update each monitoring unit card.
+    */
+
+    Object.entries(latestByUnit).forEach(
+        ([unitId, reading]) => {
+
+            const card =
+                document.querySelector(
+                    `.unit-card[data-unit-id="${unitId}"]`
+                );
+
+
+            if (!card) {
+                return;
+            }
+
+
+            const sensorContainer =
+                card.querySelector(
+                    ".unit-sensors"
+                );
+
+
+            if (!sensorContainer) {
+                return;
+            }
+
+
+            // -----------------------------------------
+            // HUMAN PRESENCE
+            // -----------------------------------------
+
+            let humanStatus =
+                "No presence detected";
+
+
+            if (reading.human_presence === true) {
+
+                humanStatus =
+                    "Human detected";
+
+            } else if (
+                reading.human_presence === false
+            ) {
+
+                humanStatus =
+                    "No presence detected";
+            }
+
+
+            // -----------------------------------------
+            // VIBRATION
+            // -----------------------------------------
+
+            const vibration =
+                formatNumber(
+                    reading.vibration_level,
+                    3
+                );
+
+
+            // -----------------------------------------
+            // SMOKE
+            // -----------------------------------------
+
+            let smokeStatus =
+                "Unavailable";
+
+
+            if (
+                reading.smoke_level !== null &&
+                reading.smoke_level !== undefined
+            ) {
+
+                smokeStatus =
+                    String(
+                        reading.smoke_level
+                    );
+            }
+
+
+            // -----------------------------------------
+            // TARGET STATE
+            // -----------------------------------------
+
+            const targetState =
+                reading.target_state ||
+                "None";
+
+
+            // -----------------------------------------
+            // STATUS
+            // -----------------------------------------
+
+            let sensorStatus =
+                "Monitoring";
+
+
+            if (
+                reading.human_presence === true
+            ) {
+
+                sensorStatus =
+                    "MONITOR";
+
+            } else if (
+                reading.vibration_level !== null &&
+                Number(reading.vibration_level) >= 0.20
+            ) {
+
+                sensorStatus =
+                    "MONITOR";
+
+            } else if (
+                reading.smoke_level !== null
+            ) {
+
+                sensorStatus =
+                    "MONITOR";
+            }
+
+
+            // -----------------------------------------
+            // RENDER SENSOR DATA
+            // -----------------------------------------
+
+            sensorContainer.innerHTML = `
+
+                <div class="unit-sensor-header">
+
+                    <strong>
+                        Live Sensor Data
+                    </strong>
+
+                    <span class="sensor-status">
+                        ${escapeHTML(sensorStatus)}
+                    </span>
+
+                </div>
+
+
+                <div class="sensor-grid">
+
+                    <div class="sensor-item">
+
+                        <span>
+                            Temperature
+                        </span>
+
+                        <strong>
+                            ${
+                                reading.temperature !== null &&
+                                reading.temperature !== undefined
+
+                                ? formatNumber(
+                                    reading.temperature,
+                                    1
+                                ) + " °C"
+
+                                : "Unavailable"
+                            }
+                        </strong>
+
+                    </div>
+
+
+                    <div class="sensor-item">
+
+                        <span>
+                            Humidity
+                        </span>
+
+                        <strong>
+                            ${
+                                reading.humidity !== null &&
+                                reading.humidity !== undefined
+
+                                ? formatNumber(
+                                    reading.humidity,
+                                    1
+                                ) + " %"
+
+                                : "Unavailable"
+                            }
+                        </strong>
+
+                    </div>
+
+
+                    <div class="sensor-item">
+
+                        <span>
+                            Human Presence
+                        </span>
+
+                        <strong>
+                            ${escapeHTML(
+                                humanStatus
+                            )}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="sensor-item">
+
+                        <span>
+                            Vibration
+                        </span>
+
+                        <strong>
+                            ${escapeHTML(
+                                vibration
+                            )} g
+                        </strong>
+
+                    </div>
+
+
+                    <div class="sensor-item">
+
+                        <span>
+                            Target State
+                        </span>
+
+                        <strong>
+                            ${escapeHTML(
+                                targetState
+                            )}
+                        </strong>
+
+                    </div>
+
+
+                    <div class="sensor-item">
+
+                        <span>
+                            Smoke Level
+                        </span>
+
+                        <strong>
+                            ${escapeHTML(
+                                smokeStatus
+                            )}
+                        </strong>
+
+                    </div>
+
+                </div>
+
+
+                <div class="sensor-last-reading">
+
+                    <span>
+                        Last Sensor Reading
+                    </span>
+
+                    <strong>
+                        ${formatDate(
+                            reading.recorded_at
+                        )}
+                    </strong>
+
+                </div>
+
+            `;
+        }
+    );
 }
 
 
@@ -313,6 +759,7 @@ async function loadEmergencyEvents() {
                 *,
                 units (
                     unit_name,
+                    unit_id,
                     location
                 )
             `)
@@ -339,9 +786,18 @@ async function loadEmergencyEvents() {
         );
 
 
-    document.getElementById(
-        "activeEmergencies"
-    ).textContent = active.length;
+    const activeEmergencies =
+        document.getElementById(
+            "activeEmergencies"
+        );
+
+
+    if (activeEmergencies) {
+
+        activeEmergencies.textContent =
+            active.length;
+
+    }
 
 
     if (!data.length) {
@@ -365,13 +821,18 @@ async function loadEmergencyEvents() {
         data.map(event => {
 
             const unit =
-                event.units?.unit_name || "Unknown";
+                event.units?.unit_name ||
+                event.units?.unit_id ||
+                "Unknown";
+
 
             return `
                 <tr>
 
                     <td>
-                        ${formatDate(event.detected_at)}
+                        ${formatDate(
+                            event.detected_at
+                        )}
                     </td>
 
                     <td>
@@ -379,15 +840,21 @@ async function loadEmergencyEvents() {
                     </td>
 
                     <td>
-                        ${escapeHTML(event.emergency_type)}
+                        ${escapeHTML(
+                            event.emergency_type
+                        )}
                     </td>
 
                     <td>
-                        ${escapeHTML(event.severity)}
+                        ${escapeHTML(
+                            event.severity
+                        )}
                     </td>
 
                     <td>
-                        ${escapeHTML(event.response_status)}
+                        ${escapeHTML(
+                            event.response_status
+                        )}
                     </td>
 
                 </tr>
@@ -444,8 +911,16 @@ async function loadUserReports() {
     }
 
 
-    document.getElementById("userReports")
-        .textContent = data.length;
+    const userReports =
+        document.getElementById(
+            "userReports"
+        );
+
+
+    if (userReports) {
+        userReports.textContent =
+            data.length;
+    }
 
 
     if (!data.length) {
@@ -472,25 +947,34 @@ async function loadUserReports() {
                 <tr>
 
                     <td>
-                        ${formatDate(report.reported_at)}
-                    </td>
-
-                    <td>
-                        ${escapeHTML(report.emergency_type)}
-                    </td>
-
-                    <td>
-                        ${escapeHTML(report.location)}
-                    </td>
-
-                    <td>
-                        ${escapeHTML(
-                            report.description || "No description"
+                        ${formatDate(
+                            report.reported_at
                         )}
                     </td>
 
                     <td>
-                        ${escapeHTML(report.status)}
+                        ${escapeHTML(
+                            report.emergency_type
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(
+                            report.location
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(
+                            report.description ||
+                            "No description"
+                        )}
+                    </td>
+
+                    <td>
+                        ${escapeHTML(
+                            report.status
+                        )}
                     </td>
 
                 </tr>
@@ -534,6 +1018,7 @@ async function loadOfficialAlerts() {
             error
         );
 
+
         if (desktopContainer) {
 
             desktopContainer.innerHTML = `
@@ -543,6 +1028,7 @@ async function loadOfficialAlerts() {
             `;
 
         }
+
 
         if (mobileContainer) {
 
@@ -579,8 +1065,10 @@ async function loadOfficialAlerts() {
 
 
     if (externalAlerts) {
+
         externalAlerts.textContent =
             alertCount;
+
     }
 
 
@@ -619,15 +1107,25 @@ async function loadOfficialAlerts() {
                         <div class="alert-card">
 
                             <h4>
-                                ${escapeHTML(alert.title)}
+                                ${escapeHTML(
+                                    alert.title
+                                )}
                             </h4>
 
                             <p>
+
                                 <strong>
-                                    ${escapeHTML(alert.source)}
+                                    ${escapeHTML(
+                                        alert.source
+                                    )}
                                 </strong>
+
                                 ·
-                                ${escapeHTML(alert.alert_type)}
+
+                                ${escapeHTML(
+                                    alert.alert_type
+                                )}
+
                             </p>
 
                             <p>
@@ -639,7 +1137,9 @@ async function loadOfficialAlerts() {
 
                             <p>
                                 Issued:
-                                ${formatDate(alert.issued_at)}
+                                ${formatDate(
+                                    alert.issued_at
+                                )}
                             </p>
 
                         </div>
@@ -686,7 +1186,9 @@ async function loadOfficialAlerts() {
                         >
 
                             <h3>
-                                ${escapeHTML(alert.title)}
+                                ${escapeHTML(
+                                    alert.title
+                                )}
                             </h3>
 
                             <p>
@@ -699,11 +1201,15 @@ async function loadOfficialAlerts() {
                             <div class="alert-meta">
 
                                 <span>
-                                    ${escapeHTML(alert.source)}
+                                    ${escapeHTML(
+                                        alert.source
+                                    )}
                                 </span>
 
                                 <span>
-                                    ${formatDate(alert.issued_at)}
+                                    ${formatDate(
+                                        alert.issued_at
+                                    )}
                                 </span>
 
                             </div>
@@ -771,9 +1277,11 @@ function showMobilePage(
 
 
     mobilePages.forEach(page => {
+
         page.classList.remove(
             "active-mobile-page"
         );
+
     });
 
 
@@ -797,7 +1305,9 @@ function showMobilePage(
 
 
     navItems.forEach(item => {
+
         item.classList.remove("active");
+
     });
 
 
@@ -820,12 +1330,16 @@ function showMobilePage(
 
 
     if (pageId === "mobileAlertsPage") {
+
         loadOfficialAlerts();
+
     }
 }
 
 
-// HOME
+// =====================================================
+// MOBILE HOME NAVIGATION
+// =====================================================
 
 document
     .getElementById("mobileHomeNav")
@@ -842,7 +1356,9 @@ document
     );
 
 
-// REPORT BUTTON
+// =====================================================
+// MOBILE REPORT BUTTON
+// =====================================================
 
 document
     .getElementById("mobileReportButton")
@@ -859,7 +1375,9 @@ document
     );
 
 
-// REPORT NAV
+// =====================================================
+// MOBILE REPORT NAV
+// =====================================================
 
 document
     .getElementById("mobileReportNav")
@@ -876,7 +1394,9 @@ document
     );
 
 
-// REPORT BACK
+// =====================================================
+// MOBILE REPORT BACK
+// =====================================================
 
 document
     .getElementById("mobileReportBack")
@@ -893,7 +1413,9 @@ document
     );
 
 
-// ALERT CARD
+// =====================================================
+// MOBILE ALERT CARD
+// =====================================================
 
 document
     .getElementById("mobileAlertsButton")
@@ -910,7 +1432,9 @@ document
     );
 
 
-// ALERT NAV
+// =====================================================
+// MOBILE ALERT NAV
+// =====================================================
 
 document
     .getElementById("mobileAlertsNav")
@@ -927,7 +1451,9 @@ document
     );
 
 
-// ALERT BACK
+// =====================================================
+// MOBILE ALERT BACK
+// =====================================================
 
 document
     .getElementById("mobileAlertsBack")
@@ -1017,6 +1543,7 @@ if (mobileReportForm) {
                     .from("user_reports")
                     .insert([
                         {
+
                             reporter_name:
                                 reporterName || null,
 
@@ -1031,6 +1558,7 @@ if (mobileReportForm) {
 
                             status:
                                 "Pending"
+
                         }
                     ]);
 
@@ -1122,10 +1650,17 @@ async function loadDashboard() {
 
 
     await Promise.all([
+
         loadUnits(),
+
+        loadLatestSensorReadings(),
+
         loadEmergencyEvents(),
+
         loadUserReports(),
+
         loadOfficialAlerts()
+
     ]);
 
 
@@ -1136,14 +1671,18 @@ async function loadDashboard() {
 
 
     if (lastUpdate) {
+
         lastUpdate.textContent =
             "Just now";
+
     }
 
 }
 
 
+// =====================================================
 // REFRESH BUTTON
+// =====================================================
 
 document
     .getElementById("refreshDashboard")
@@ -1154,11 +1693,30 @@ document
 
 
 // =====================================================
-// START
+// INITIAL LOAD
 // =====================================================
 
 loadDashboard();
 
+
 console.log(
     "LICAS system initialized."
+);
+
+
+// =====================================================
+// LIVE SENSOR REFRESH
+// =====================================================
+
+setInterval(
+    async () => {
+
+        console.log(
+            "Live sensor refresh..."
+        );
+
+        await loadLatestSensorReadings();
+
+    },
+    5000
 );
