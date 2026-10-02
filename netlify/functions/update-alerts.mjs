@@ -6,7 +6,7 @@ const supabase = createClient(
 );
 
 // =====================================================
-// GENERAL HELPERS
+// HELPERS
 // =====================================================
 
 function decodeHtml(text = "") {
@@ -34,8 +34,8 @@ function detectSeverity(text = "") {
   const t = text.toLowerCase();
 
   if (
-    t.includes("critical") ||
     t.includes("red alert") ||
+    t.includes("critical") ||
     t.includes("extreme danger") ||
     t.includes("danger")
   ) {
@@ -70,9 +70,7 @@ async function fetchPage(url) {
   try {
     const controller = new AbortController();
 
-    const timeout = setTimeout(() => {
-      controller.abort();
-    }, 20000);
+    const timeout = setTimeout(() => controller.abort(), 20000);
 
     const response = await fetch(url, {
       method: "GET",
@@ -103,7 +101,6 @@ async function fetchPage(url) {
   } catch (error) {
     console.error(`FETCH FAILED: ${url}`);
     console.error(error.message);
-
     return null;
   }
 }
@@ -204,77 +201,215 @@ async function saveAlert(alert) {
 }
 
 // =====================================================
-// PHIVOLCS EARTHQUAKE
+// PAGASA NCR FORECAST EXTRACTION
 // =====================================================
 
-function extractLatestEarthquakes(html) {
+function extractPAGASANCR(html) {
   /*
-   * PHIVOLCS provides a table containing:
+   * PAGASA's NCR page contains a large amount of navigation.
    *
-   * Date - Time
-   * Latitude
-   * Longitude
-   * Depth
-   * Mag
-   * Location
-   *
-   * We extract only the first several earthquake rows.
+   * Instead of storing the entire page, we look for actual
+   * forecast terminology and collect only nearby weather
+   * information.
    */
 
-  const tableMatch = html.match(
-    /PHIVOLCS LATEST EARTHQUAKE INFORMATION([\s\S]*?)(?:PHIVOLCS Earthquake Intensity|$)/i
-  );
+  const text = cleanText(html);
 
-  const section = tableMatch ? tableMatch[1] : html;
+  const weatherPatterns = [
+    /partly cloudy/gi,
+    /mostly cloudy/gi,
+    /cloudy skies/gi,
+    /cloudy/gi,
+    /fair weather/gi,
+    /isolated rainshowers/gi,
+    /isolated thunderstorms/gi,
+    /scattered rainshowers/gi,
+    /scattered thunderstorms/gi,
+    /rainshowers/gi,
+    /thunderstorms/gi,
+    /light rains/gi,
+    /moderate rains/gi,
+    /heavy rains/gi
+  ];
 
-  const text = cleanText(section);
+  const matches = [];
 
-  const datePattern =
-    /(\d{2}\s+[A-Za-z]+\s+\d{4}\s*-\s*\d{2}:\d{2}\s*(?:AM|PM)?)/gi;
-
-  const matches = [...text.matchAll(datePattern)];
-
-  const earthquakes = [];
-
-  for (let i = 0; i < Math.min(matches.length, 10); i++) {
-    const start = matches[i].index;
-    const end =
-      i + 1 < matches.length
-        ? matches[i + 1].index
-        : Math.min(start + 250, text.length);
-
-    let row = text.substring(start, end).trim();
-
-    row = row.replace(/\s+/g, " ");
-
-    earthquakes.push(row);
+  for (const pattern of weatherPatterns) {
+    for (const match of text.matchAll(pattern)) {
+      matches.push(match.index);
+    }
   }
 
-  if (earthquakes.length > 0) {
-    return earthquakes.join("\n");
+  if (matches.length === 0) {
+    return null;
   }
 
-  return text.substring(0, 4000);
+  matches.sort((a, b) => a - b);
+
+  /*
+   * Take a reasonable window around actual weather terminology.
+   * This prevents the giant navigation menu from being stored.
+   */
+  const sections = [];
+
+  for (const index of matches.slice(0, 8)) {
+    const start = Math.max(0, index - 250);
+    const end = Math.min(text.length, index + 650);
+
+    let section = text.substring(start, end);
+
+    section = section
+      .replace(
+        /National Capital Region\s+National Capital Region/gi,
+        "National Capital Region"
+      )
+      .replace(/\s+/g, " ")
+      .trim();
+
+    if (section.length > 30) {
+      sections.push(section);
+    }
+  }
+
+  /*
+   * Remove duplicate/overlapping sections.
+   */
+  const unique = [];
+
+  for (const section of sections) {
+    const duplicate = unique.some(
+      (existing) =>
+        existing.includes(section) ||
+        section.includes(existing)
+    );
+
+    if (!duplicate) {
+      unique.push(section);
+    }
+  }
+
+  /*
+   * Prefer the most useful weather section.
+   */
+  let result = unique.join("\n\n");
+
+  // Remove obvious navigation fragments.
+  result = result
+    .replace(
+      /Regional Forecast\s+Northern Luzon[\s\S]*?National Capital Region/gi,
+      ""
+    )
+    .replace(
+      /National Capital Region\s+Southern Luzon\s+Visayas\s+Mindanao/gi,
+      ""
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return result.substring(0, 4000);
 }
 
-async function updatePHIVOLCS() {
-  const url = "https://earthquake.phivolcs.dost.gov.ph/";
+// =====================================================
+// PAGASA
+// =====================================================
+
+async function updatePAGASA() {
+  const url =
+    "https://bagong.pagasa.dost.gov.ph/regional-forecast/ncrprsd";
 
   const html = await fetchPage(url);
 
   if (!html) {
     return {
       success: false,
-      error: "Unable to fetch PHIVOLCS earthquake page"
+      error: "Unable to fetch PAGASA NCR forecast page"
     };
   }
 
-  const description = extractLatestEarthquakes(html);
+  const forecast = extractPAGASANCR(html);
+
+  if (!forecast) {
+    return {
+      success: false,
+      error:
+        "PAGASA page loaded, but the NCR forecast could not be extracted."
+    };
+  }
+
+  return await saveAlert({
+    source: "PAGASA",
+    alert_type: "WEATHER",
+    title: "PAGASA NCR Weather Forecast",
+    description: forecast,
+    severity: detectSeverity(forecast),
+    issued_at: new Date().toISOString(),
+    expires_at: null,
+    source_url: url,
+    content_type: "NCR_FORECAST",
+    source_type: "OFFICIAL",
+    location: "National Capital Region",
+    published_at: new Date().toISOString(),
+    is_official: true
+  });
+}
+
+// =====================================================
+// PHIVOLCS EARTHQUAKE
+// =====================================================
+
+function extractPHIVOLCS(html) {
+  const text = cleanText(html);
+
+  const earthquakePattern =
+    /\d{2}\s+[A-Za-z]+\s+\d{4}\s*-\s*\d{2}:\d{2}\s*(?:AM|PM)?/gi;
+
+  const matches = [...text.matchAll(earthquakePattern)];
+
+  const rows = [];
+
+  for (let i = 0; i < Math.min(matches.length, 10); i++) {
+    const start = matches[i].index;
+
+    const end =
+      i + 1 < matches.length
+        ? matches[i + 1].index
+        : Math.min(start + 250, text.length);
+
+    let row = text.substring(start, end);
+
+    row = row.replace(/\s+/g, " ").trim();
+
+    rows.push(row);
+  }
+
+  if (rows.length === 0) {
+    return text.substring(0, 4000);
+  }
+
+  return rows.join("\n");
+}
+
+async function updatePHIVOLCS() {
+  const url =
+    "https://earthquake.phivolcs.dost.gov.ph/";
+
+  const html = await fetchPage(url);
+
+  if (!html) {
+    return {
+      success: false,
+      error:
+        "Unable to fetch PHIVOLCS earthquake page"
+    };
+  }
+
+  const description = extractPHIVOLCS(html);
 
   return await saveAlert({
     source: "PHIVOLCS",
     alert_type: "EARTHQUAKE",
-    title: "Latest PHIVOLCS Earthquake Information",
+    title:
+      "Latest PHIVOLCS Earthquake Information",
     description,
     severity: detectSeverity(description),
     issued_at: new Date().toISOString(),
@@ -292,13 +427,13 @@ async function updatePHIVOLCS() {
 // PHIVOLCS VOLCANO
 // =====================================================
 
-function extractVolcanoInformation(html) {
+function extractVolcano(html) {
   const text = cleanText(html);
 
   const keywords = [
     "Alert Level",
-    "Volcanic",
     "eruption",
+    "volcanic",
     "volcano",
     "activity",
     "advisory"
@@ -308,7 +443,9 @@ function extractVolcanoInformation(html) {
     .split(/(?<=[.!?])\s+/)
     .filter((sentence) =>
       keywords.some((keyword) =>
-        sentence.toLowerCase().includes(keyword.toLowerCase())
+        sentence
+          .toLowerCase()
+          .includes(keyword.toLowerCase())
       )
     );
 
@@ -320,23 +457,26 @@ function extractVolcanoInformation(html) {
 }
 
 async function updatePHIVOLCSVolcano() {
-  const url = "https://volcano.phivolcs.dost.gov.ph/";
+  const url =
+    "https://volcano.phivolcs.dost.gov.ph/";
 
   const html = await fetchPage(url);
 
   if (!html) {
     return {
       success: false,
-      error: "Unable to fetch PHIVOLCS volcano page"
+      error:
+        "Unable to fetch PHIVOLCS volcano page"
     };
   }
 
-  const description = extractVolcanoInformation(html);
+  const description = extractVolcano(html);
 
   return await saveAlert({
     source: "PHIVOLCS",
     alert_type: "VOLCANIC",
-    title: "Latest PHIVOLCS Volcano Information",
+    title:
+      "Latest PHIVOLCS Volcano Information",
     description,
     severity: detectSeverity(description),
     issued_at: new Date().toISOString(),
@@ -351,147 +491,13 @@ async function updatePHIVOLCSVolcano() {
 }
 
 // =====================================================
-// PAGASA NCR
-// =====================================================
-
-function extractNCRForecast(html) {
-  /*
-   * PAGASA's regional forecast page contains a large amount
-   * of navigation text. We locate the NCR forecast content
-   * using recognizable forecast labels.
-   */
-
-  const text = cleanText(html);
-
-  const forecastMarkers = [
-    "National Capital Region",
-    "Weather Forecast",
-    "Forecast",
-    "Temperature",
-    "Wind",
-    "Forecast Issued"
-  ];
-
-  let start = -1;
-
-  for (const marker of forecastMarkers) {
-    const index = text.indexOf(marker);
-
-    if (index >= 0) {
-      start = index;
-      break;
-    }
-  }
-
-  if (start < 0) {
-    return text.substring(0, 5000);
-  }
-
-  let result = text.substring(start);
-
-  // Remove obvious navigation-heavy beginning.
-  result = result.replace(
-    /National Capital Region\s+National Capital Region\s+-->\s+Southern Luzon[\s\S]*?National Meteorological and Hydrological Services/i,
-    ""
-  );
-
-  // Remove repeated site navigation if it remains.
-  result = result
-    .replace(
-      /Regional Forecast\s+Northern Luzon\s+Northern Luzon\s+-->\s+National Capital Region/gi,
-      ""
-    )
-    .replace(
-      /Products and Services[\s\S]*?About Us/gi,
-      ""
-    )
-    .replace(
-      /Related Linkages[\s\S]*?Transparency Seal/gi,
-      ""
-    )
-    .replace(
-      /Privacy Notice[\s\S]*?Accessibility/gi,
-      ""
-    );
-
-  result = result.replace(/\s+/g, " ").trim();
-
-  /*
-   * If the first extraction still contains obvious navigation,
-   * locate the first actual forecast terminology.
-   */
-
-  const actualForecastMarkers = [
-    "Partly cloudy",
-    "Mostly cloudy",
-    "Cloudy skies",
-    "Cloudy",
-    "Fair weather",
-    "Isolated",
-    "Scattered",
-    "Thunderstorms",
-    "Rainshowers",
-    "Rain showers"
-  ];
-
-  let forecastStart = -1;
-
-  for (const marker of actualForecastMarkers) {
-    const index = result.toLowerCase().indexOf(marker.toLowerCase());
-
-    if (index >= 0) {
-      forecastStart = index;
-      break;
-    }
-  }
-
-  if (forecastStart >= 0) {
-    result = result.substring(forecastStart);
-  }
-
-  return result.substring(0, 5000);
-}
-
-async function updatePAGASA() {
-  const url =
-    "https://bagong.pagasa.dost.gov.ph/regional-forecast/ncrprsd";
-
-  const html = await fetchPage(url);
-
-  if (!html) {
-    return {
-      success: false,
-      error: "Unable to fetch PAGASA NCR forecast page"
-    };
-  }
-
-  const description = extractNCRForecast(html);
-
-  return await saveAlert({
-    source: "PAGASA",
-    alert_type: "WEATHER",
-    title: "PAGASA NCR Weather Forecast",
-    description,
-    severity: detectSeverity(description),
-    issued_at: new Date().toISOString(),
-    expires_at: null,
-    source_url: url,
-    content_type: "NCR_FORECAST",
-    source_type: "OFFICIAL",
-    location: "National Capital Region",
-    published_at: new Date().toISOString(),
-    is_official: true
-  });
-}
-
-// =====================================================
 // NDRRMC
 // =====================================================
 
-function extractNDRRMCInformation(html) {
+function extractNDRRMC(html) {
   const text = cleanText(html);
 
-  const importantTerms = [
+  const keywords = [
     "NDRRMC",
     "disaster",
     "incident",
@@ -506,8 +512,10 @@ function extractNDRRMCInformation(html) {
   const sentences = text
     .split(/(?<=[.!?])\s+/)
     .filter((sentence) =>
-      importantTerms.some((term) =>
-        sentence.toLowerCase().includes(term.toLowerCase())
+      keywords.some((keyword) =>
+        sentence
+          .toLowerCase()
+          .includes(keyword.toLowerCase())
       )
     );
 
@@ -519,23 +527,26 @@ function extractNDRRMCInformation(html) {
 }
 
 async function updateNDRRMC() {
-  const url = "https://ndrrmc.gov.ph/";
+  const url =
+    "https://ndrrmc.gov.ph/";
 
   const html = await fetchPage(url);
 
   if (!html) {
     return {
       success: false,
-      error: "Unable to fetch NDRRMC website"
+      error:
+        "Unable to fetch NDRRMC website"
     };
   }
 
-  const description = extractNDRRMCInformation(html);
+  const description = extractNDRRMC(html);
 
   return await saveAlert({
     source: "NDRRMC",
     alert_type: "DISASTER",
-    title: "Latest NDRRMC Disaster Information",
+    title:
+      "Latest NDRRMC Disaster Information",
     description,
     severity: detectSeverity(description),
     issued_at: new Date().toISOString(),
@@ -563,7 +574,8 @@ export default async () => {
         JSON.stringify(
           {
             success: false,
-            error: "Supabase environment variables are missing."
+            error:
+              "Supabase environment variables are missing."
           },
           null,
           2
@@ -592,7 +604,9 @@ export default async () => {
     };
 
     const allSuccessful = results.every(
-      (result) => result && result.success === true
+      (result) =>
+        result &&
+        result.success === true
     );
 
     return new Response(
@@ -615,7 +629,10 @@ export default async () => {
       }
     );
   } catch (error) {
-    console.error("LICAS updater fatal error:", error);
+    console.error(
+      "LICAS updater fatal error:",
+      error
+    );
 
     return new Response(
       JSON.stringify(
