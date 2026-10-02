@@ -1,15 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
 // =====================================================
-// NETLIFY SCHEDULE
-// Runs automatically every 15 minutes
-// =====================================================
-
-export const config = {
-    schedule: "*/15 * * * *"
-};
-
-// =====================================================
 // SUPABASE SERVER CONNECTION
 // =====================================================
 
