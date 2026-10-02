@@ -6,20 +6,26 @@ const supabase = createClient(
 );
 
 // =====================================================
-// HELPERS
+// GENERAL HELPERS
 // =====================================================
 
-function cleanText(text = "") {
+function decodeHtml(text = "") {
   return text
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">");
+}
+
+function cleanText(text = "") {
+  return decodeHtml(text)
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
     .replace(/<style[\s\S]*?<\/style>/gi, " ")
     .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
     .replace(/<svg[\s\S]*?<\/svg>/gi, " ")
     .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -28,8 +34,8 @@ function detectSeverity(text = "") {
   const t = text.toLowerCase();
 
   if (
-    t.includes("red alert") ||
     t.includes("critical") ||
+    t.includes("red alert") ||
     t.includes("extreme danger") ||
     t.includes("danger")
   ) {
@@ -40,10 +46,10 @@ function detectSeverity(text = "") {
     t.includes("warning") ||
     t.includes("high alert") ||
     t.includes("severe") ||
-    t.includes("strong winds") ||
     t.includes("heavy rainfall") ||
     t.includes("heavy rain") ||
-    t.includes("flash flood")
+    t.includes("flash flood") ||
+    t.includes("strong winds")
   ) {
     return "HIGH";
   }
@@ -90,7 +96,7 @@ async function fetchPage(url) {
     const html = await response.text();
 
     if (!html || html.length < 50) {
-      throw new Error("Empty or invalid response");
+      throw new Error("Empty response");
     }
 
     return html;
@@ -133,7 +139,8 @@ async function saveAlert(alert) {
     .maybeSingle();
 
   if (findError) {
-    console.error(`DATABASE FIND ERROR [${source}]:`, findError);
+    console.error(`DATABASE FIND ERROR [${source}]:`, findError.message);
+
     return {
       success: false,
       error: findError.message
@@ -163,15 +170,13 @@ async function saveAlert(alert) {
       .eq("id", existing.id);
 
     if (error) {
-      console.error(`DATABASE UPDATE ERROR [${source}]:`, error);
+      console.error(`DATABASE UPDATE ERROR [${source}]:`, error.message);
 
       return {
         success: false,
         error: error.message
       };
     }
-
-    console.log(`UPDATED: ${source}`);
 
     return {
       success: true,
@@ -184,15 +189,13 @@ async function saveAlert(alert) {
     .insert(payload);
 
   if (error) {
-    console.error(`DATABASE INSERT ERROR [${source}]:`, error);
+    console.error(`DATABASE INSERT ERROR [${source}]:`, error.message);
 
     return {
       success: false,
       error: error.message
     };
   }
-
-  console.log(`INSERTED: ${source}`);
 
   return {
     success: true,
@@ -201,8 +204,58 @@ async function saveAlert(alert) {
 }
 
 // =====================================================
-// PHIVOLCS - EARTHQUAKE
+// PHIVOLCS EARTHQUAKE
 // =====================================================
+
+function extractLatestEarthquakes(html) {
+  /*
+   * PHIVOLCS provides a table containing:
+   *
+   * Date - Time
+   * Latitude
+   * Longitude
+   * Depth
+   * Mag
+   * Location
+   *
+   * We extract only the first several earthquake rows.
+   */
+
+  const tableMatch = html.match(
+    /PHIVOLCS LATEST EARTHQUAKE INFORMATION([\s\S]*?)(?:PHIVOLCS Earthquake Intensity|$)/i
+  );
+
+  const section = tableMatch ? tableMatch[1] : html;
+
+  const text = cleanText(section);
+
+  const datePattern =
+    /(\d{2}\s+[A-Za-z]+\s+\d{4}\s*-\s*\d{2}:\d{2}\s*(?:AM|PM)?)/gi;
+
+  const matches = [...text.matchAll(datePattern)];
+
+  const earthquakes = [];
+
+  for (let i = 0; i < Math.min(matches.length, 10); i++) {
+    const start = matches[i].index;
+    const end =
+      i + 1 < matches.length
+        ? matches[i + 1].index
+        : Math.min(start + 250, text.length);
+
+    let row = text.substring(start, end).trim();
+
+    row = row.replace(/\s+/g, " ");
+
+    earthquakes.push(row);
+  }
+
+  if (earthquakes.length > 0) {
+    return earthquakes.join("\n");
+  }
+
+  return text.substring(0, 4000);
+}
 
 async function updatePHIVOLCS() {
   const url = "https://earthquake.phivolcs.dost.gov.ph/";
@@ -216,18 +269,14 @@ async function updatePHIVOLCS() {
     };
   }
 
-  const text = cleanText(html);
-
-  const description =
-    text.substring(0, 5000) ||
-    "PHIVOLCS latest earthquake information.";
+  const description = extractLatestEarthquakes(html);
 
   return await saveAlert({
     source: "PHIVOLCS",
     alert_type: "EARTHQUAKE",
     title: "Latest PHIVOLCS Earthquake Information",
     description,
-    severity: detectSeverity(text),
+    severity: detectSeverity(description),
     issued_at: new Date().toISOString(),
     expires_at: null,
     source_url: url,
@@ -240,8 +289,35 @@ async function updatePHIVOLCS() {
 }
 
 // =====================================================
-// PHIVOLCS - VOLCANO
+// PHIVOLCS VOLCANO
 // =====================================================
+
+function extractVolcanoInformation(html) {
+  const text = cleanText(html);
+
+  const keywords = [
+    "Alert Level",
+    "Volcanic",
+    "eruption",
+    "volcano",
+    "activity",
+    "advisory"
+  ];
+
+  const sentences = text
+    .split(/(?<=[.!?])\s+/)
+    .filter((sentence) =>
+      keywords.some((keyword) =>
+        sentence.toLowerCase().includes(keyword.toLowerCase())
+      )
+    );
+
+  if (sentences.length > 0) {
+    return sentences.slice(0, 15).join(" ");
+  }
+
+  return text.substring(0, 4000);
+}
 
 async function updatePHIVOLCSVolcano() {
   const url = "https://volcano.phivolcs.dost.gov.ph/";
@@ -255,18 +331,14 @@ async function updatePHIVOLCSVolcano() {
     };
   }
 
-  const text = cleanText(html);
-
-  const description =
-    text.substring(0, 5000) ||
-    "PHIVOLCS latest volcano information.";
+  const description = extractVolcanoInformation(html);
 
   return await saveAlert({
     source: "PHIVOLCS",
     alert_type: "VOLCANIC",
     title: "Latest PHIVOLCS Volcano Information",
     description,
-    severity: detectSeverity(text),
+    severity: detectSeverity(description),
     issued_at: new Date().toISOString(),
     expires_at: null,
     source_url: url,
@@ -279,8 +351,106 @@ async function updatePHIVOLCSVolcano() {
 }
 
 // =====================================================
-// PAGASA - NCR FORECAST
+// PAGASA NCR
 // =====================================================
+
+function extractNCRForecast(html) {
+  /*
+   * PAGASA's regional forecast page contains a large amount
+   * of navigation text. We locate the NCR forecast content
+   * using recognizable forecast labels.
+   */
+
+  const text = cleanText(html);
+
+  const forecastMarkers = [
+    "National Capital Region",
+    "Weather Forecast",
+    "Forecast",
+    "Temperature",
+    "Wind",
+    "Forecast Issued"
+  ];
+
+  let start = -1;
+
+  for (const marker of forecastMarkers) {
+    const index = text.indexOf(marker);
+
+    if (index >= 0) {
+      start = index;
+      break;
+    }
+  }
+
+  if (start < 0) {
+    return text.substring(0, 5000);
+  }
+
+  let result = text.substring(start);
+
+  // Remove obvious navigation-heavy beginning.
+  result = result.replace(
+    /National Capital Region\s+National Capital Region\s+-->\s+Southern Luzon[\s\S]*?National Meteorological and Hydrological Services/i,
+    ""
+  );
+
+  // Remove repeated site navigation if it remains.
+  result = result
+    .replace(
+      /Regional Forecast\s+Northern Luzon\s+Northern Luzon\s+-->\s+National Capital Region/gi,
+      ""
+    )
+    .replace(
+      /Products and Services[\s\S]*?About Us/gi,
+      ""
+    )
+    .replace(
+      /Related Linkages[\s\S]*?Transparency Seal/gi,
+      ""
+    )
+    .replace(
+      /Privacy Notice[\s\S]*?Accessibility/gi,
+      ""
+    );
+
+  result = result.replace(/\s+/g, " ").trim();
+
+  /*
+   * If the first extraction still contains obvious navigation,
+   * locate the first actual forecast terminology.
+   */
+
+  const actualForecastMarkers = [
+    "Partly cloudy",
+    "Mostly cloudy",
+    "Cloudy skies",
+    "Cloudy",
+    "Fair weather",
+    "Isolated",
+    "Scattered",
+    "Thunderstorms",
+    "Rainshowers",
+    "Rain showers"
+  ];
+
+  let forecastStart = -1;
+
+  for (const marker of actualForecastMarkers) {
+    const index = result.toLowerCase().indexOf(marker.toLowerCase());
+
+    if (index >= 0) {
+      forecastStart = index;
+      break;
+    }
+  }
+
+  if (forecastStart >= 0) {
+    result = result.substring(forecastStart);
+  }
+
+  return result.substring(0, 5000);
+}
 
 async function updatePAGASA() {
   const url =
@@ -295,45 +465,14 @@ async function updatePAGASA() {
     };
   }
 
-  const text = cleanText(html);
-
-  // Try to isolate the useful NCR forecast portion.
-  let description = text;
-
-  const startIndex = text.indexOf("National Capital Region");
-
-  if (startIndex >= 0) {
-    description = text.substring(startIndex);
-  }
-
-  // Remove some repeated navigation/interface text.
-  description = description
-    .replace(
-      /Select Image:[\s\S]*?Regional Forecast Issued At:/i,
-      "Regional Forecast Issued At:"
-    )
-    .replace(
-      /SPECIAL FORECAST FOR TAAL VOLCANO[\s\S]*$/i,
-      ""
-    )
-    .replace(
-      /Show Legend[\s\S]*$/i,
-      ""
-    )
-    .replace(/\s+/g, " ")
-    .trim();
-
-  // Keep database content manageable.
-  description = description.substring(0, 7000);
-
-  const severity = detectSeverity(description);
+  const description = extractNCRForecast(html);
 
   return await saveAlert({
     source: "PAGASA",
     alert_type: "WEATHER",
     title: "PAGASA NCR Weather Forecast",
     description,
-    severity,
+    severity: detectSeverity(description),
     issued_at: new Date().toISOString(),
     expires_at: null,
     source_url: url,
@@ -349,6 +488,36 @@ async function updatePAGASA() {
 // NDRRMC
 // =====================================================
 
+function extractNDRRMCInformation(html) {
+  const text = cleanText(html);
+
+  const importantTerms = [
+    "NDRRMC",
+    "disaster",
+    "incident",
+    "warning",
+    "advisory",
+    "typhoon",
+    "earthquake",
+    "flood",
+    "landslide"
+  ];
+
+  const sentences = text
+    .split(/(?<=[.!?])\s+/)
+    .filter((sentence) =>
+      importantTerms.some((term) =>
+        sentence.toLowerCase().includes(term.toLowerCase())
+      )
+    );
+
+  if (sentences.length > 0) {
+    return sentences.slice(0, 20).join(" ");
+  }
+
+  return text.substring(0, 4000);
+}
+
 async function updateNDRRMC() {
   const url = "https://ndrrmc.gov.ph/";
 
@@ -361,18 +530,14 @@ async function updateNDRRMC() {
     };
   }
 
-  const text = cleanText(html);
-
-  const description =
-    text.substring(0, 5000) ||
-    "Latest NDRRMC disaster information.";
+  const description = extractNDRRMCInformation(html);
 
   return await saveAlert({
     source: "NDRRMC",
     alert_type: "DISASTER",
     title: "Latest NDRRMC Disaster Information",
     description,
-    severity: detectSeverity(text),
+    severity: detectSeverity(description),
     issued_at: new Date().toISOString(),
     expires_at: null,
     source_url: url,
@@ -385,7 +550,7 @@ async function updateNDRRMC() {
 }
 
 // =====================================================
-// MAIN FUNCTION
+// MAIN
 // =====================================================
 
 export default async () => {
@@ -412,10 +577,6 @@ export default async () => {
       );
     }
 
-    console.log("======================================");
-    console.log("LICAS ALERT UPDATER STARTED");
-    console.log("======================================");
-
     const results = await Promise.all([
       updatePHIVOLCS(),
       updatePHIVOLCSVolcano(),
@@ -423,7 +584,7 @@ export default async () => {
       updateNDRRMC()
     ]);
 
-    const status = {
+    const sources = {
       PHIVOLCS_EARTHQUAKE: results[0],
       PHIVOLCS_VOLCANO: results[1],
       PAGASA_NCR: results[2],
@@ -434,11 +595,6 @@ export default async () => {
       (result) => result && result.success === true
     );
 
-    console.log("======================================");
-    console.log("LICAS ALERT UPDATER FINISHED");
-    console.log(JSON.stringify(status, null, 2));
-    console.log("======================================");
-
     return new Response(
       JSON.stringify(
         {
@@ -446,7 +602,7 @@ export default async () => {
           message: allSuccessful
             ? "LICAS external alerts updated successfully."
             : "LICAS external alert update completed with source errors.",
-          sources: status
+          sources
         },
         null,
         2
