@@ -6,7 +6,7 @@ const supabase = createClient(
 );
 
 // =====================================================
-// HELPERS
+// GENERAL HELPERS
 // =====================================================
 
 function decodeHtml(text = "") {
@@ -16,7 +16,9 @@ function decodeHtml(text = "") {
     .replace(/&quot;/gi, '"')
     .replace(/&#39;/gi, "'")
     .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">");
+    .replace(/&gt;/gi, ">")
+    .replace(/&deg;/gi, "°")
+    .replace(/&#176;/gi, "°");
 }
 
 function cleanText(text = "") {
@@ -36,15 +38,13 @@ function detectSeverity(text = "") {
   if (
     t.includes("red alert") ||
     t.includes("critical") ||
-    t.includes("extreme danger") ||
-    t.includes("danger")
+    t.includes("extreme danger")
   ) {
     return "CRITICAL";
   }
 
   if (
     t.includes("warning") ||
-    t.includes("high alert") ||
     t.includes("severe") ||
     t.includes("heavy rainfall") ||
     t.includes("heavy rain") ||
@@ -70,7 +70,10 @@ async function fetchPage(url) {
   try {
     const controller = new AbortController();
 
-    const timeout = setTimeout(() => controller.abort(), 20000);
+    const timeout = setTimeout(
+      () => controller.abort(),
+      20000
+    );
 
     const response = await fetch(url, {
       method: "GET",
@@ -126,17 +129,21 @@ async function saveAlert(alert) {
     is_official
   } = alert;
 
-  const { data: existing, error: findError } = await supabase
-    .from("external_alerts")
-    .select("id")
-    .eq("source", source)
-    .eq("title", title)
-    .eq("location", location || "")
-    .limit(1)
-    .maybeSingle();
+  const { data: existing, error: findError } =
+    await supabase
+      .from("external_alerts")
+      .select("id")
+      .eq("source", source)
+      .eq("title", title)
+      .eq("location", location || "")
+      .limit(1)
+      .maybeSingle();
 
   if (findError) {
-    console.error(`DATABASE FIND ERROR [${source}]:`, findError.message);
+    console.error(
+      `DATABASE FIND ERROR [${source}]:`,
+      findError.message
+    );
 
     return {
       success: false,
@@ -167,7 +174,10 @@ async function saveAlert(alert) {
       .eq("id", existing.id);
 
     if (error) {
-      console.error(`DATABASE UPDATE ERROR [${source}]:`, error.message);
+      console.error(
+        `DATABASE UPDATE ERROR [${source}]:`,
+        error.message
+      );
 
       return {
         success: false,
@@ -186,7 +196,10 @@ async function saveAlert(alert) {
     .insert(payload);
 
   if (error) {
-    console.error(`DATABASE INSERT ERROR [${source}]:`, error.message);
+    console.error(
+      `DATABASE INSERT ERROR [${source}]:`,
+      error.message
+    );
 
     return {
       success: false,
@@ -201,117 +214,290 @@ async function saveAlert(alert) {
 }
 
 // =====================================================
-// PAGASA NCR FORECAST EXTRACTION
+// PAGASA
 // =====================================================
 
 function extractPAGASANCR(html) {
-  /*
-   * PAGASA's NCR page contains a large amount of navigation.
-   *
-   * Instead of storing the entire page, we look for actual
-   * forecast terminology and collect only nearby weather
-   * information.
-   */
-
   const text = cleanText(html);
 
-  const weatherPatterns = [
-    /partly cloudy/gi,
-    /mostly cloudy/gi,
-    /cloudy skies/gi,
-    /cloudy/gi,
-    /fair weather/gi,
-    /isolated rainshowers/gi,
-    /isolated thunderstorms/gi,
-    /scattered rainshowers/gi,
-    /scattered thunderstorms/gi,
-    /rainshowers/gi,
-    /thunderstorms/gi,
-    /light rains/gi,
-    /moderate rains/gi,
-    /heavy rains/gi
-  ];
+  const forecastMarker =
+    "Regional Forecast Issued At:";
 
-  const matches = [];
+  const forecastStart =
+    text.indexOf(forecastMarker);
 
-  for (const pattern of weatherPatterns) {
-    for (const match of text.matchAll(pattern)) {
-      matches.push(match.index);
-    }
-  }
-
-  if (matches.length === 0) {
+  if (forecastStart === -1) {
     return null;
   }
 
-  matches.sort((a, b) => a - b);
-
   /*
-   * Take a reasonable window around actual weather terminology.
-   * This prevents the giant navigation menu from being stored.
+   * Everything before the first weather phrase is mostly
+   * PAGASA navigation/location labels.
    */
-  const sections = [];
+  const forecastSection = text.substring(
+    forecastStart,
+    Math.min(
+      text.length,
+      forecastStart + 5000
+    )
+  );
 
-  for (const index of matches.slice(0, 8)) {
-    const start = Math.max(0, index - 250);
-    const end = Math.min(text.length, index + 650);
+  const weatherPatterns = [
+    "Partly cloudy to cloudy skies",
+    "Mostly cloudy skies",
+    "Cloudy skies",
+    "Partly cloudy",
+    "Mostly cloudy",
+    "Fair weather",
+    "Isolated rainshowers or thunderstorms",
+    "Isolated rainshowers",
+    "Isolated thunderstorms",
+    "Scattered rainshowers",
+    "Scattered thunderstorms",
+    "Light rains",
+    "Moderate rains",
+    "Heavy rains"
+  ];
 
-    let section = text.substring(start, end);
+  let weatherStart = -1;
+  let matchedWeather = "";
 
-    section = section
-      .replace(
-        /National Capital Region\s+National Capital Region/gi,
-        "National Capital Region"
-      )
-      .replace(/\s+/g, " ")
-      .trim();
+  for (const pattern of weatherPatterns) {
+    const index = forecastSection
+      .toLowerCase()
+      .indexOf(pattern.toLowerCase());
 
-    if (section.length > 30) {
-      sections.push(section);
+    if (
+      index !== -1 &&
+      (weatherStart === -1 ||
+        index < weatherStart)
+    ) {
+      weatherStart = index;
+      matchedWeather = pattern;
     }
   }
 
-  /*
-   * Remove duplicate/overlapping sections.
-   */
-  const unique = [];
+  if (weatherStart === -1) {
+    return null;
+  }
 
-  for (const section of sections) {
-    const duplicate = unique.some(
-      (existing) =>
-        existing.includes(section) ||
-        section.includes(existing)
+  /*
+   * Start exactly at the weather condition.
+   */
+  let actual = forecastSection.substring(
+    weatherStart
+  );
+
+  // Stop before the extended outlook.
+  const outlookIndex = actual
+    .toLowerCase()
+    .indexOf("extended weather outlook");
+
+  if (outlookIndex !== -1) {
+    actual = actual.substring(
+      0,
+      outlookIndex
     );
-
-    if (!duplicate) {
-      unique.push(section);
-    }
   }
 
-  /*
-   * Prefer the most useful weather section.
-   */
-  let result = unique.join("\n\n");
-
-  // Remove obvious navigation fragments.
-  result = result
-    .replace(
-      /Regional Forecast\s+Northern Luzon[\s\S]*?National Capital Region/gi,
-      ""
-    )
-    .replace(
-      /National Capital Region\s+Southern Luzon\s+Visayas\s+Mindanao/gi,
-      ""
-    )
+  actual = actual
     .replace(/\s+/g, " ")
     .trim();
 
-  return result.substring(0, 4000);
-}
+  // ---------------------------------------------------
+  // WEATHER CONDITION
+  // ---------------------------------------------------
 
-// =====================================================
-// PAGASA
-// =====================================================
+  let condition = matchedWeather;
+
+  const conditionMatch = actual.match(
+    /^(.*?)(?=\s+\d{2}°\s*\d{2}°|\s+\d{2}\s*°\s*\d{2}\s*°)/i
+  );
+
+  if (conditionMatch) {
+    condition = conditionMatch[1].trim();
+  }
+
+  // ---------------------------------------------------
+  // TEMPERATURE
+  // ---------------------------------------------------
+
+  const temperatureMatch = actual.match(
+    /(\d{2})\s*°\s*(\d{2})\s*°/
+  );
+
+  const minTemperature = temperatureMatch
+    ? temperatureMatch[1]
+    : null;
+
+  const maxTemperature = temperatureMatch
+    ? temperatureMatch[2]
+    : null;
+
+  // ---------------------------------------------------
+  // WIND
+  // ---------------------------------------------------
+
+  const windMatch = actual.match(
+    /Wind Speed:\s*(.*?)\s+Direction:\s*(.*?)\s+Coastal Condition:\s*(.*?)(?=\s+(?:Partly cloudy|Mostly cloudy|Cloudy skies|Partly cloudy to cloudy|Extended Weather Outlook|$))/i
+  );
+
+  const windSpeed = windMatch
+    ? windMatch[1].trim()
+    : null;
+
+  const windDirection = windMatch
+    ? windMatch[2].trim()
+    : null;
+
+  const coastalCondition = windMatch
+    ? windMatch[3].trim()
+    : null;
+
+  // ---------------------------------------------------
+  // ISSUED DATE/TIME
+  // ---------------------------------------------------
+
+  const issuedMatch = text.match(
+    /Regional Forecast Issued At:\s*(\d{2}:\d{2}\s*[AP]M),\s*(\d{1,2}\s+\w+,\s+\d{4})/i
+  );
+
+  const issuedText = issuedMatch
+    ? `${issuedMatch[1]} ${issuedMatch[2]}`
+    : "Latest PAGASA regional forecast";
+
+  // ---------------------------------------------------
+  // SECOND FORECAST BLOCK
+  //
+  // PAGASA's NCR page can contain another forecast
+  // block for the same regional page. We intentionally
+  // take only the first actual NCR forecast.
+  // ---------------------------------------------------
+
+  const result = [];
+
+  result.push(
+    `Regional Forecast — ${issuedText}`
+  );
+
+  if (condition) {
+    result.push(
+      `Condition: ${condition}`
+    );
+  }
+
+  if (
+    minTemperature &&
+    maxTemperature
+  ) {
+    result.push(
+      `Temperature: ${minTemperature}°C–${maxTemperature}°C`
+    );
+  }
+
+  if (windSpeed) {
+    result.push(
+      `Wind: ${windSpeed}`
+    );
+  }
+
+  if (windDirection) {
+    result.push(
+      `Wind Direction: ${windDirection}`
+    );
+  }
+
+  if (coastalCondition) {
+    result.push(
+      `Coastal Condition: ${coastalCondition}`
+    );
+  }
+
+  // ---------------------------------------------------
+  // EXTENDED OUTLOOK
+  // ---------------------------------------------------
+
+  const outlookMarker =
+    "Extended Weather Outlook";
+
+  const outlookStart =
+    text.indexOf(
+      outlookMarker,
+      forecastStart
+    );
+
+  if (outlookStart !== -1) {
+    let outlook = text.substring(
+      outlookStart,
+      Math.min(
+        text.length,
+        outlookStart + 2200
+      )
+    );
+
+    /*
+     * Only keep actual outlook information.
+     */
+    outlook = outlook
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const dayNames = [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday"
+    ];
+
+    const daysFound = [];
+
+    for (const day of dayNames) {
+      const regex = new RegExp(
+        `${day}\\s+(\\d{2})°\\s*(\\d{2})°\\s+Wind Speed\\s+(.*?)\\s+Direction\\s+(.*?)\\s+Coastal Condition\\s+(.*?)(?=\\s+(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)\\s+\\d{2}°|$)`,
+        "i"
+      );
+
+      const match = outlook.match(regex);
+
+      if (match) {
+        daysFound.push({
+          day,
+          min: match[1],
+          max: match[2],
+          wind: match[3].trim(),
+          direction: match[4].trim(),
+          coastal: match[5].trim()
+        });
+      }
+    }
+
+    if (daysFound.length > 0) {
+      result.push("");
+      result.push("Extended Outlook");
+
+      for (const day of daysFound.slice(0, 4)) {
+        result.push("");
+        result.push(
+          `${day.day}: ${day.min}°C–${day.max}°C`
+        );
+        result.push(
+          `Wind: ${day.wind}`
+        );
+        result.push(
+          `Direction: ${day.direction}`
+        );
+        result.push(
+          `Coastal Condition: ${day.coastal}`
+        );
+      }
+    }
+  }
+
+  return result.join("\n");
+}
 
 async function updatePAGASA() {
   const url =
@@ -322,11 +508,13 @@ async function updatePAGASA() {
   if (!html) {
     return {
       success: false,
-      error: "Unable to fetch PAGASA NCR forecast page"
+      error:
+        "Unable to fetch PAGASA NCR forecast page."
     };
   }
 
-  const forecast = extractPAGASANCR(html);
+  const forecast =
+    extractPAGASANCR(html);
 
   if (!forecast) {
     return {
@@ -363,23 +551,39 @@ function extractPHIVOLCS(html) {
   const earthquakePattern =
     /\d{2}\s+[A-Za-z]+\s+\d{4}\s*-\s*\d{2}:\d{2}\s*(?:AM|PM)?/gi;
 
-  const matches = [...text.matchAll(earthquakePattern)];
+  const matches = [
+    ...text.matchAll(earthquakePattern)
+  ];
 
   const rows = [];
 
-  for (let i = 0; i < Math.min(matches.length, 10); i++) {
+  for (
+    let i = 0;
+    i < Math.min(matches.length, 10);
+    i++
+  ) {
     const start = matches[i].index;
 
     const end =
       i + 1 < matches.length
         ? matches[i + 1].index
-        : Math.min(start + 250, text.length);
+        : Math.min(
+            start + 250,
+            text.length
+          );
 
-    let row = text.substring(start, end);
+    let row = text.substring(
+      start,
+      end
+    );
 
-    row = row.replace(/\s+/g, " ").trim();
+    row = row
+      .replace(/\s+/g, " ")
+      .trim();
 
-    rows.push(row);
+    if (row.length > 20) {
+      rows.push(row);
+    }
   }
 
   if (rows.length === 0) {
@@ -399,11 +603,12 @@ async function updatePHIVOLCS() {
     return {
       success: false,
       error:
-        "Unable to fetch PHIVOLCS earthquake page"
+        "Unable to fetch PHIVOLCS earthquake page."
     };
   }
 
-  const description = extractPHIVOLCS(html);
+  const description =
+    extractPHIVOLCS(html);
 
   return await saveAlert({
     source: "PHIVOLCS",
@@ -445,12 +650,16 @@ function extractVolcano(html) {
       keywords.some((keyword) =>
         sentence
           .toLowerCase()
-          .includes(keyword.toLowerCase())
+          .includes(
+            keyword.toLowerCase()
+          )
       )
     );
 
   if (sentences.length > 0) {
-    return sentences.slice(0, 15).join(" ");
+    return sentences
+      .slice(0, 15)
+      .join(" ");
   }
 
   return text.substring(0, 4000);
@@ -466,11 +675,12 @@ async function updatePHIVOLCSVolcano() {
     return {
       success: false,
       error:
-        "Unable to fetch PHIVOLCS volcano page"
+        "Unable to fetch PHIVOLCS volcano page."
     };
   }
 
-  const description = extractVolcano(html);
+  const description =
+    extractVolcano(html);
 
   return await saveAlert({
     source: "PHIVOLCS",
@@ -515,12 +725,16 @@ function extractNDRRMC(html) {
       keywords.some((keyword) =>
         sentence
           .toLowerCase()
-          .includes(keyword.toLowerCase())
+          .includes(
+            keyword.toLowerCase()
+          )
       )
     );
 
   if (sentences.length > 0) {
-    return sentences.slice(0, 20).join(" ");
+    return sentences
+      .slice(0, 20)
+      .join(" ");
   }
 
   return text.substring(0, 4000);
@@ -536,11 +750,12 @@ async function updateNDRRMC() {
     return {
       success: false,
       error:
-        "Unable to fetch NDRRMC website"
+        "Unable to fetch NDRRMC website."
     };
   }
 
-  const description = extractNDRRMC(html);
+  const description =
+    extractNDRRMC(html);
 
   return await saveAlert({
     source: "NDRRMC",
@@ -561,7 +776,7 @@ async function updateNDRRMC() {
 }
 
 // =====================================================
-// MAIN
+// MAIN NETLIFY FUNCTION
 // =====================================================
 
 export default async () => {
@@ -583,48 +798,64 @@ export default async () => {
         {
           status: 500,
           headers: {
-            "content-type": "application/json"
+            "content-type":
+              "application/json"
           }
         }
       );
     }
 
-    const results = await Promise.all([
-      updatePHIVOLCS(),
-      updatePHIVOLCSVolcano(),
-      updatePAGASA(),
-      updateNDRRMC()
-    ]);
+    const results =
+      await Promise.all([
+        updatePHIVOLCS(),
+        updatePHIVOLCSVolcano(),
+        updatePAGASA(),
+        updateNDRRMC()
+      ]);
 
     const sources = {
-      PHIVOLCS_EARTHQUAKE: results[0],
-      PHIVOLCS_VOLCANO: results[1],
-      PAGASA_NCR: results[2],
-      NDRRMC: results[3]
+      PHIVOLCS_EARTHQUAKE:
+        results[0],
+
+      PHIVOLCS_VOLCANO:
+        results[1],
+
+      PAGASA_NCR:
+        results[2],
+
+      NDRRMC:
+        results[3]
     };
 
-    const allSuccessful = results.every(
-      (result) =>
-        result &&
-        result.success === true
-    );
+    const allSuccessful =
+      results.every(
+        (result) =>
+          result &&
+          result.success === true
+      );
 
     return new Response(
       JSON.stringify(
         {
           success: allSuccessful,
+
           message: allSuccessful
             ? "LICAS external alerts updated successfully."
             : "LICAS external alert update completed with source errors.",
+
           sources
         },
         null,
         2
       ),
       {
-        status: allSuccessful ? 200 : 207,
+        status: allSuccessful
+          ? 200
+          : 207,
+
         headers: {
-          "content-type": "application/json"
+          "content-type":
+            "application/json"
         }
       }
     );
@@ -646,7 +877,8 @@ export default async () => {
       {
         status: 500,
         headers: {
-          "content-type": "application/json"
+          "content-type":
+            "application/json"
         }
       }
     );
