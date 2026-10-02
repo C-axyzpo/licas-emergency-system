@@ -1,197 +1,253 @@
+```css
 /* =====================================================
    LICAS — MOBILE MANUAL REPORT
-   Clean emergency-report interface
+   Isolated / scoped styling
    ===================================================== */
 
 .mobile-report-page {
-    background: #f4f6f8;
+    width: 100%;
     min-height: 100%;
+    background: #f4f6f8;
+    color: #17212b;
+    box-sizing: border-box;
+}
+
+.mobile-report-page *,
+.mobile-report-page *::before,
+.mobile-report-page *::after {
+    box-sizing: border-box;
 }
 
 
-/* -----------------------------------------------------
-   REPORT HEADER
-   ----------------------------------------------------- */
+/* =====================================================
+   HEADER
+   ===================================================== */
 
-.mobile-report-header {
+.mobile-report-page .mobile-report-header {
+    width: 100%;
     display: flex;
     align-items: center;
     gap: 14px;
+
     padding: 18px 18px 14px;
+
     background: #ffffff;
     border-bottom: 1px solid #e2e7eb;
 }
 
-.mobile-report-back,
-#mobileReportBack {
+.mobile-report-page .mobile-report-back,
+.mobile-report-page #mobileReportBack {
     width: 40px;
     height: 40px;
-    border: 1px solid #dfe5ea;
-    border-radius: 10px;
-    background: #ffffff;
-    color: #17212b;
+    min-width: 40px;
+    padding: 0;
+
     display: flex;
     align-items: center;
     justify-content: center;
+
+    border: 1px solid #dfe5ea;
+    border-radius: 10px;
+
+    background: #ffffff;
+    color: #17212b;
+
     font-size: 18px;
+    line-height: 1;
+
     cursor: pointer;
-    flex-shrink: 0;
+
     transition:
         background 0.18s ease,
         border-color 0.18s ease,
         transform 0.18s ease;
 }
 
-.mobile-report-back:hover,
-#mobileReportBack:hover {
+.mobile-report-page .mobile-report-back:hover,
+.mobile-report-page #mobileReportBack:hover {
     background: #f1f4f6;
     border-color: #cfd7dd;
 }
 
-.mobile-report-back:active,
-#mobileReportBack:active {
+.mobile-report-page .mobile-report-back:active,
+.mobile-report-page #mobileReportBack:active {
     transform: scale(0.96);
 }
 
-.mobile-report-heading {
+
+.mobile-report-page .mobile-report-heading {
     min-width: 0;
+    flex: 1;
 }
 
-.mobile-report-heading h1,
-.mobile-report-heading h2,
-.mobile-report-heading h3 {
+.mobile-report-page .mobile-report-heading h1,
+.mobile-report-page .mobile-report-heading h2,
+.mobile-report-page .mobile-report-heading h3 {
     margin: 0;
+
     color: #17212b;
+
     font-size: 20px;
     font-weight: 750;
     line-height: 1.2;
 }
 
-.mobile-report-heading p {
+.mobile-report-page .mobile-report-heading p {
     margin: 4px 0 0;
+
     color: #71808e;
+
     font-size: 12px;
     line-height: 1.4;
 }
 
 
-/* -----------------------------------------------------
-   REPORT CONTENT
-   ----------------------------------------------------- */
+/* =====================================================
+   CONTENT
+   ===================================================== */
 
-.mobile-report-content {
+.mobile-report-page .mobile-report-content {
     width: 100%;
     max-width: 620px;
+
     margin: 0 auto;
     padding: 18px;
 }
 
 
-/* -----------------------------------------------------
-   WARNING / INTRO CARD
-   ----------------------------------------------------- */
+/* =====================================================
+   INTRO / WARNING
+   ===================================================== */
 
-.mobile-report-intro {
+.mobile-report-page .mobile-report-intro {
+    width: 100%;
+
     display: flex;
     align-items: flex-start;
     gap: 12px;
-    padding: 14px;
+
     margin-bottom: 14px;
+    padding: 14px;
 
     background: #fff8ed;
     border: 1px solid #f0dfbf;
     border-radius: 12px;
 }
 
-.mobile-report-intro-icon {
+.mobile-report-page .mobile-report-intro-icon {
     width: 34px;
     height: 34px;
-    border-radius: 9px;
-
-    background: #f3e2c4;
-    color: #76551e;
+    min-width: 34px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
+    border-radius: 9px;
+
+    background: #f3e2c4;
+    color: #76551e;
+
     font-size: 16px;
     font-weight: 800;
-    flex-shrink: 0;
 }
 
-.mobile-report-intro strong {
+.mobile-report-page .mobile-report-intro strong {
     display: block;
+
     color: #49391f;
+
     font-size: 13px;
     line-height: 1.35;
 }
 
-.mobile-report-intro span {
+.mobile-report-page .mobile-report-intro span {
     display: block;
+
     margin-top: 3px;
+
     color: #79694e;
+
     font-size: 11px;
     line-height: 1.45;
 }
 
 
-/* -----------------------------------------------------
+/* =====================================================
    FORM CARD
-   ----------------------------------------------------- */
+   ===================================================== */
 
-.mobile-report-form-card {
+.mobile-report-page .mobile-report-form-card {
+    width: 100%;
+
     background: #ffffff;
+
     border: 1px solid #e1e6ea;
     border-radius: 14px;
+
     box-shadow: 0 3px 12px rgba(16, 24, 32, 0.04);
+
     overflow: hidden;
 }
 
-.mobile-report-form {
+.mobile-report-page .mobile-report-form {
+    width: 100%;
     padding: 18px;
 }
 
 
-/* -----------------------------------------------------
-   FORM GROUPS
-   ----------------------------------------------------- */
+/* =====================================================
+   FORM FIELDS
+   ===================================================== */
 
-.mobile-report-field {
+.mobile-report-page .mobile-report-field {
+    width: 100%;
     margin-bottom: 16px;
 }
 
-.mobile-report-field:last-of-type {
+.mobile-report-page .mobile-report-field:last-child,
+.mobile-report-page .mobile-report-field:last-of-type {
     margin-bottom: 0;
 }
 
-.mobile-report-field label {
+.mobile-report-page .mobile-report-field label {
     display: block;
-    margin-bottom: 7px;
+
+    margin: 0 0 7px;
 
     color: #263440;
+
     font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.01em;
+    line-height: 1.3;
 }
 
-.mobile-report-field label .optional {
+.mobile-report-page .mobile-report-field label .optional {
     color: #8a969f;
     font-weight: 500;
 }
 
+.mobile-report-page .mobile-report-required {
+    color: #b54b4b;
+    margin-left: 2px;
+}
 
-/* -----------------------------------------------------
+
+/* =====================================================
    INPUTS
-   ----------------------------------------------------- */
+   ===================================================== */
 
-.mobile-report-field input,
-.mobile-report-field select,
-.mobile-report-field textarea,
-#mobileReportForm input,
-#mobileReportForm select,
-#mobileReportForm textarea {
+.mobile-report-page .mobile-report-field input,
+.mobile-report-page .mobile-report-field select,
+.mobile-report-page .mobile-report-field textarea {
+    display: block;
+
     width: 100%;
+    max-width: 100%;
+
+    margin: 0;
+    padding: 0 13px;
+
     appearance: none;
 
     border: 1px solid #d7dfe5;
@@ -212,150 +268,149 @@
         background 0.18s ease;
 }
 
-.mobile-report-field input,
-.mobile-report-field select,
-#mobileReportForm input,
-#mobileReportForm select {
+.mobile-report-page .mobile-report-field input,
+.mobile-report-page .mobile-report-field select {
     height: 46px;
-    padding: 0 13px;
 }
 
-.mobile-report-field textarea,
-#mobileReportForm textarea {
+.mobile-report-page .mobile-report-field textarea {
     min-height: 112px;
     padding: 12px 13px;
     resize: vertical;
 }
 
-.mobile-report-field input::placeholder,
-.mobile-report-field textarea::placeholder,
-#mobileReportForm input::placeholder,
-#mobileReportForm textarea::placeholder {
+.mobile-report-page .mobile-report-field input::placeholder,
+.mobile-report-page .mobile-report-field textarea::placeholder {
     color: #9aa5ad;
 }
 
 
-/* -----------------------------------------------------
+/* =====================================================
    SELECT
-   ----------------------------------------------------- */
+   ===================================================== */
 
-.mobile-report-field select,
-#mobileReportForm select {
+.mobile-report-page .mobile-report-field select {
     cursor: pointer;
     padding-right: 38px;
 
     background-image:
         linear-gradient(45deg, transparent 50%, #71808e 50%),
         linear-gradient(135deg, #71808e 50%, transparent 50%);
+
     background-position:
         calc(100% - 17px) 20px,
         calc(100% - 12px) 20px;
+
     background-size:
         5px 5px,
         5px 5px;
+
     background-repeat: no-repeat;
 }
 
 
-/* -----------------------------------------------------
+/* =====================================================
    FOCUS
-   ----------------------------------------------------- */
+   ===================================================== */
 
-.mobile-report-field input:focus,
-.mobile-report-field select:focus,
-.mobile-report-field textarea:focus,
-#mobileReportForm input:focus,
-#mobileReportForm select:focus,
-#mobileReportForm textarea:focus {
+.mobile-report-page .mobile-report-field input:focus,
+.mobile-report-page .mobile-report-field select:focus,
+.mobile-report-page .mobile-report-field textarea:focus {
     border-color: #3d6f91;
-    box-shadow: 0 0 0 3px rgba(61, 111, 145, 0.10);
+
+    box-shadow:
+        0 0 0 3px rgba(61, 111, 145, 0.10);
 }
 
 
-/* -----------------------------------------------------
-   TWO-COLUMN FIELDS
-   ----------------------------------------------------- */
+/* =====================================================
+   TWO COLUMN
+   ===================================================== */
 
-.mobile-report-row {
+.mobile-report-page .mobile-report-row {
+    width: 100%;
+
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+
     gap: 12px;
 }
 
 
-/* -----------------------------------------------------
-   FIELD HINT
-   ----------------------------------------------------- */
+/* =====================================================
+   HINT
+   ===================================================== */
 
-.mobile-report-hint {
+.mobile-report-page .mobile-report-hint {
     margin-top: 5px;
+
     color: #89959e;
+
     font-size: 10px;
     line-height: 1.4;
 }
 
 
-/* -----------------------------------------------------
-   REQUIRED MARK
-   ----------------------------------------------------- */
+/* =====================================================
+   SEVERITY
+   ===================================================== */
 
-.mobile-report-required {
-    color: #b54b4b;
-    margin-left: 2px;
-}
-
-
-/* -----------------------------------------------------
-   SEVERITY SELECT
-   ----------------------------------------------------- */
-
-#mobileSeverity {
+.mobile-report-page #mobileSeverity {
     font-weight: 600;
 }
 
-#mobileSeverity option[value="Low"] {
+.mobile-report-page #mobileSeverity option[value="Low"] {
     color: #3f6b4f;
 }
 
-#mobileSeverity option[value="Moderate"] {
+.mobile-report-page #mobileSeverity option[value="Moderate"] {
     color: #806a2d;
 }
 
-#mobileSeverity option[value="High"] {
+.mobile-report-page #mobileSeverity option[value="High"] {
     color: #9a573b;
 }
 
-#mobileSeverity option[value="Critical"] {
+.mobile-report-page #mobileSeverity option[value="Critical"] {
     color: #963f3f;
 }
 
 
-/* -----------------------------------------------------
-   FORM DIVIDER
-   ----------------------------------------------------- */
+/* =====================================================
+   DIVIDER
+   ===================================================== */
 
-.mobile-report-divider {
+.mobile-report-page .mobile-report-divider {
+    width: 100%;
     height: 1px;
+
     margin: 18px 0;
 
     background: #e8ecef;
 }
 
 
-/* -----------------------------------------------------
-   SUBMIT AREA
-   ----------------------------------------------------- */
+/* =====================================================
+   SUBMIT
+   ===================================================== */
 
-.mobile-report-submit-area {
+.mobile-report-page .mobile-report-submit-area {
+    width: 100%;
+
     margin-top: 20px;
     padding-top: 17px;
 
     border-top: 1px solid #e8ecef;
 }
 
-#mobileSubmitReport {
+.mobile-report-page #mobileSubmitReport {
+    display: block;
+
     width: 100%;
     min-height: 48px;
+
+    margin: 0;
+    padding: 0 16px;
 
     border: 0;
     border-radius: 10px;
@@ -366,6 +421,8 @@
     font-family: inherit;
     font-size: 13px;
     font-weight: 750;
+    line-height: 1;
+
     letter-spacing: 0.02em;
 
     cursor: pointer;
@@ -376,27 +433,31 @@
         box-shadow 0.18s ease;
 }
 
-#mobileSubmitReport:hover {
+.mobile-report-page #mobileSubmitReport:hover {
     background: #24323e;
-    box-shadow: 0 4px 12px rgba(16, 24, 32, 0.12);
+
+    box-shadow:
+        0 4px 12px rgba(16, 24, 32, 0.12);
 }
 
-#mobileSubmitReport:active {
+.mobile-report-page #mobileSubmitReport:active {
     transform: translateY(1px);
 }
 
-#mobileSubmitReport:disabled {
+.mobile-report-page #mobileSubmitReport:disabled {
     opacity: 0.60;
     cursor: not-allowed;
     box-shadow: none;
 }
 
 
-/* -----------------------------------------------------
-   RESULT MESSAGE
-   ----------------------------------------------------- */
+/* =====================================================
+   RESULT
+   ===================================================== */
 
-.mobile-result {
+.mobile-report-page .mobile-result {
+    width: 100%;
+
     margin-top: 12px;
     padding: 12px 13px;
 
@@ -406,24 +467,26 @@
     line-height: 1.45;
 }
 
-.mobile-result.success {
+.mobile-report-page .mobile-result.success {
     background: #edf7f0;
     border: 1px solid #cce5d2;
     color: #356344;
 }
 
-.mobile-result.error {
+.mobile-report-page .mobile-result.error {
     background: #fff0ef;
     border: 1px solid #eccdca;
     color: #8a403b;
 }
 
 
-/* -----------------------------------------------------
+/* =====================================================
    SAFETY NOTE
-   ----------------------------------------------------- */
+   ===================================================== */
 
-.mobile-report-safety {
+.mobile-report-page .mobile-report-safety {
+    width: 100%;
+
     display: flex;
     align-items: flex-start;
     gap: 9px;
@@ -431,59 +494,57 @@
     margin-top: 13px;
 
     color: #7a8790;
+
     font-size: 10px;
     line-height: 1.45;
 }
 
-.mobile-report-safety-icon {
+.mobile-report-page .mobile-report-safety-icon {
     flex-shrink: 0;
     font-weight: 800;
 }
 
 
 /* =====================================================
-   MOBILE RESPONSIVE
+   MOBILE
    ===================================================== */
 
 @media (max-width: 600px) {
 
-    .mobile-report-content {
+    .mobile-report-page .mobile-report-content {
         padding: 14px;
     }
 
-    .mobile-report-header {
+    .mobile-report-page .mobile-report-header {
         padding: 14px;
     }
 
-    .mobile-report-heading h1,
-    .mobile-report-heading h2,
-    .mobile-report-heading h3 {
+    .mobile-report-page .mobile-report-heading h1,
+    .mobile-report-page .mobile-report-heading h2,
+    .mobile-report-page .mobile-report-heading h3 {
         font-size: 18px;
     }
 
-    .mobile-report-form {
+    .mobile-report-page .mobile-report-form {
         padding: 15px;
     }
 
-    .mobile-report-row {
-        grid-template-columns: 1fr;
+    .mobile-report-page .mobile-report-row {
+        grid-template-columns: minmax(0, 1fr);
         gap: 0;
     }
 
-    .mobile-report-field {
+    .mobile-report-page .mobile-report-field {
         margin-bottom: 15px;
     }
 
-    .mobile-report-field input,
-    .mobile-report-field select,
-    #mobileReportForm input,
-    #mobileReportForm select {
+    .mobile-report-page .mobile-report-field input,
+    .mobile-report-page .mobile-report-field select {
         height: 45px;
         font-size: 14px;
     }
 
-    .mobile-report-field textarea,
-    #mobileReportForm textarea {
+    .mobile-report-page .mobile-report-field textarea {
         min-height: 105px;
     }
 }
@@ -495,25 +556,27 @@
 
 @media (max-width: 380px) {
 
-    .mobile-report-content {
+    .mobile-report-page .mobile-report-content {
         padding: 10px;
     }
 
-    .mobile-report-header {
+    .mobile-report-page .mobile-report-header {
         padding: 12px 10px;
     }
 
-    .mobile-report-form {
+    .mobile-report-page .mobile-report-form {
         padding: 13px;
     }
 
-    .mobile-report-intro {
+    .mobile-report-page .mobile-report-intro {
         padding: 12px;
     }
 
-    .mobile-report-back,
-    #mobileReportBack {
+    .mobile-report-page .mobile-report-back,
+    .mobile-report-page #mobileReportBack {
         width: 36px;
+        min-width: 36px;
         height: 36px;
     }
 }
+```
