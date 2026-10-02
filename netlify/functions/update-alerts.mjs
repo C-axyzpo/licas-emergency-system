@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVER_URL,
   process.env.SUPABASE_SECRET_KEY
 );
 
@@ -231,7 +231,7 @@ async function updateNDRRMC() {
 
 export default async () => {
   try {
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SECRET_KEY) {
+    if (!process.env.SUPABASE_SERVER_URL || !process.env.SUPABASE_SECRET_KEY) {
       return new Response(
         JSON.stringify({
           success: false,
