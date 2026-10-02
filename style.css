@@ -49,6 +49,10 @@ button {
     display: flex;
 }
 
+.mobile-app {
+    display: none;
+}
+
 
 /* =====================================================
    SIDEBAR
@@ -229,7 +233,7 @@ button {
 
 
 /* =====================================================
-   PAGES
+   DESKTOP PAGES
 ===================================================== */
 
 .page {
@@ -1327,10 +1331,12 @@ tr:last-child td {
 
 @media (max-width: 650px) {
 
+    /* DESKTOP COMPLETELY OFF */
     .app {
         display: none;
     }
 
+    /* MOBILE COMPLETELY ON */
     .mobile-app {
         display: flex;
         flex-direction: column;
@@ -1377,6 +1383,7 @@ tr:last-child td {
         display: inline-block;
     }
 
+    /* MOBILE PAGE VISIBILITY */
     .mobile-page {
         display: none;
         flex: 1;
@@ -1641,6 +1648,7 @@ tr:last-child td {
         border: 1px solid #f1c4c4;
     }
 
+
     /* =================================================
        MOBILE NOTIFICATION SUPPORT
     ================================================= */
@@ -1684,6 +1692,7 @@ tr:last-child td {
     .notification-history-meta {
         gap: 5px;
     }
+
 
     /* =================================================
        MOBILE ALERTS
@@ -1822,6 +1831,7 @@ tr:last-child td {
     .mobile-official-alert .source-link {
         font-size: 9px;
     }
+
 
     /* =================================================
        MOBILE NAV
