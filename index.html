@@ -1,160 +1,294 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0b1220">
-    <title>LICAS | Localized Intelligent Crisis Alert System</title>
-    <link rel="stylesheet" href="style.css">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        LICAS | Emergency Response System
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
 </head>
+
 <body>
 
-<!-- ================= DESKTOP DASHBOARD ================= -->
-<div class="desktop-app">
-    <aside class="sidebar">
-        <div class="brand">
-            <div class="brand-mark">L</div>
-            <div>
-                <strong>LICAS</strong>
-                <span>Emergency Response System</span>
-            </div>
-        </div>
 
-        <nav class="sidebar-nav">
-            <button class="nav-button active" data-page="overview">◈ <span>Overview</span></button>
-            <button class="nav-button" data-page="emergencies">⚠ <span>Emergencies</span></button>
-            <button class="nav-button" data-page="units">▣ <span>Monitoring Units</span></button>
-            <button class="nav-button" data-page="reports">▤ <span>User Reports</span></button>
-            <button class="nav-button" data-page="alerts">◉ <span>Alerts & Announcements</span></button>
-        </nav>
+<!-- =====================================================
+     MOBILE APPLICATION
+===================================================== -->
 
-        <div class="sidebar-footer">
-            <div class="system-dot"></div>
-            <div><strong>LICAS System</strong><span>Connected to database</span></div>
-        </div>
-    </aside>
+<div
+    id="mobileApp"
+    class="mobile-app"
+>
 
-    <main class="dashboard-main">
-        <header class="topbar">
-            <div>
-                <p class="eyebrow">LOCALIZED CRISIS MONITORING</p>
-                <h1 id="pageTitle">Overview</h1>
-            </div>
-            <div class="topbar-right">
-                <div class="clock"><span>Local time</span><strong id="currentTime">--:--:--</strong></div>
-                <button id="refreshDashboard" class="refresh-button">↻ Refresh</button>
-            </div>
-        </header>
 
-        <!-- OVERVIEW -->
-        <section id="overview" class="page active-page">
-            <div class="stat-grid">
-                <article class="stat-card"><span>Monitoring Units</span><strong id="monitorUnits">0</strong><small>Total registered units</small></article>
-                <article class="stat-card"><span>Connected Units</span><strong id="onlineUnits">0</strong><small>Recently reporting</small></article>
-                <article class="stat-card"><span>User Reports</span><strong id="userReports">0</strong><small>Reports received</small></article>
-                <article class="stat-card"><span>Last Update</span><strong id="lastUpdate">--</strong><small>Dashboard refresh</small></article>
-            </div>
+    <!-- HEADER -->
 
-            <div class="content-grid two-col">
-                <section class="panel">
-                    <div class="panel-head"><div><p class="eyebrow">SYSTEM STATUS</p><h2>Monitoring Overview</h2></div><span class="live-pill">LIVE</span></div>
-                    <div class="overview-mini-grid" id="overviewSensorSummary"><div class="empty-state compact-empty"><strong>Loading sensor status</strong></div></div>
-                </section>
-                <section class="panel">
-                    <div class="panel-head"><div><p class="eyebrow">CONNECTED UNITS</p><h2>Unit Status</h2></div><strong id="overviewConnectedUnits">0</strong></div>
-                    <div id="unitsContainer" class="unit-list"></div>
-                </section>
-            </div>
-
-            <section class="panel">
-                <div class="panel-head"><div><p class="eyebrow">RECENT ACTIVITY</p><h2>System Activity</h2></div></div>
-                <div id="overviewActivity" class="activity-list"><div class="empty-state"><strong>No recent activity</strong><span>New events will appear here.</span></div></div>
-            </section>
-        </section>
-
-        <!-- EMERGENCIES -->
-        <section id="emergencies" class="page">
-            <section class="panel">
-                <div class="panel-head"><div><p class="eyebrow">DETECTED EVENTS</p><h2>Emergency Events</h2></div></div>
-                <div class="table-wrap"><table><thead><tr><th>Time</th><th>Type</th><th>Unit</th><th>Location</th><th>Severity</th><th>Status</th></tr></thead><tbody id="emergencyTable"><tr><td colspan="6" class="table-empty">Loading...</td></tr></tbody></table></div>
-            </section>
-            <div id="overviewEmergency" class="hidden"></div>
-        </section>
-
-        <!-- UNITS -->
-        <section id="units" class="page">
-            <section class="panel">
-                <div class="panel-head"><div><p class="eyebrow">ESP32 MONITORING NETWORK</p><h2>Monitoring Units</h2></div></div>
-                <div id="unitsContainer" class="unit-list units-page-list"></div>
-            </section>
-        </section>
-
-        <!-- REPORTS -->
-        <section id="reports" class="page">
-            <section class="panel">
-                <div class="panel-head"><div><p class="eyebrow">COMMUNITY INPUT</p><h2>User Emergency Reports</h2><span class="panel-subtitle">Reports submitted through the LICAS reporting interface.</span></div><button class="small-button" id="refreshReports">Refresh</button></div>
-                <div class="report-note"><strong>Response workflow</strong><span>Pending → Verified → Responding → Resolved. Invalid reports may be marked Dismissed.</span></div>
-                <div class="table-wrap"><table class="reports-table"><thead><tr><th>Time</th><th>Type</th><th>Location</th><th>Severity</th><th>Description</th><th>Status</th></tr></thead><tbody id="reportsTable"><tr><td colspan="6" class="table-empty">Loading reports...</td></tr></tbody></table></div>
-            </section>
-        </section>
-
-        <!-- ALERTS -->
-        <section id="alerts" class="page">
-            <section class="panel">
-                <div class="panel-head"><div><p class="eyebrow">INFORMATION FLOW</p><h2>Alerts & Announcements</h2></div></div>
-                <div id="alertsContainer" class="alert-list"><div class="empty-state"><strong>Loading alerts...</strong></div></div>
-            </section>
-        </section>
-    </main>
-</div>
-
-<!-- ================= MOBILE APP ================= -->
-<div id="mobileApp" class="mobile-app">
     <header class="mobile-header">
-        <div class="mobile-brand"><div class="brand-mark">L</div><div><strong>LICAS</strong><span>Emergency Information</span></div></div>
-        <span id="mobileConnectionStatus" class="mobile-online">Online</span>
+
+        <div>
+
+            <div class="mobile-brand">
+                LICAS
+            </div>
+
+            <div class="mobile-subtitle">
+                Emergency Response
+            </div>
+
+        </div>
+
+        <div class="mobile-status">
+
+            <span></span>
+
+            ONLINE
+
+        </div>
+
     </header>
 
-    <main class="mobile-content">
-        <section id="mobileHomePage" class="mobile-page active-mobile-page">
-            <div class="mobile-welcome"><p class="eyebrow">LOCAL EMERGENCY INFORMATION</p><h1>Stay informed.<br><span>Report quickly.</span></h1><p>LICAS connects local emergency reports, monitoring units, and relevant alerts in one system.</p></div>
 
-            <button id="mobileReportButton" class="mobile-report-hero"><span class="hero-icon">!</span><span><strong>Report an Emergency</strong><small>Send a report to LICAS administrators</small></span><b>›</b></button>
+    <!-- =================================================
+         MOBILE HOME
+    ================================================== -->
 
-            <button id="mobileAlertsButton" class="mobile-alert-preview"><span class="preview-icon">◉</span><span><strong id="mobileAlertPreviewTitle">No current alerts</strong><small id="mobileAlertPreviewText">Official advisories and local announcements will appear here.</small></span><b>›</b></button>
+    <main
+        id="mobileHomePage"
+        class="mobile-page active-mobile-page"
+    >
 
-            <div class="mobile-section-title"><p class="eyebrow">SYSTEM</p><h2>How LICAS helps</h2></div>
-            <div class="mobile-info-grid"><article><span>01</span><strong>Detect</strong><small>Monitoring units collect local conditions.</small></article><article><span>02</span><strong>Report</strong><small>People can submit information from their area.</small></article><article><span>03</span><strong>Inform</strong><small>Relevant emergency information is organized centrally.</small></article></div>
+        <section class="mobile-welcome">
+
+            <p>
+                Emergency assistance
+            </p>
+
+            <h1>
+                How can we help?
+            </h1>
+
         </section>
 
-        <section id="mobileReportPage" class="mobile-page">
-            <div class="mobile-page-heading"><button id="mobileReportBack" class="back-button">‹</button><div><p class="eyebrow">COMMUNITY REPORT</p><h1>Report an Emergency</h1></div></div>
-            <div class="mobile-warning"><strong>Use this for local emergency information.</strong><span>If you are in immediate danger, contact the appropriate emergency service.</span></div>
-            <form id="mobileReportForm" class="mobile-form">
-                <label>Emergency type<select id="mobileEmergencyType" required><option value="">Select emergency type</option><option value="Fire">Fire</option><option value="Medical">Medical</option><option value="Earthquake">Earthquake</option><option value="Flood">Flood</option><option value="Security">Security</option><option value="Other">Other</option></select></label>
-                <label>Location<select id="mobileLocation" required><option value="">Select location</option><option value="Main Hallway">Main Hallway</option><option value="Classroom Area">Classroom Area</option><option value="Laboratory">Laboratory</option><option value="Cafeteria">Cafeteria</option><option value="Other">Other</option></select></label>
-                <label>Severity<select id="mobileSeverity" required><option value="">Select severity</option><option value="Low">Low</option><option value="Moderate">Moderate</option><option value="Critical">Critical</option></select></label>
-                <label>Description<textarea id="mobileDescription" rows="5" placeholder="What happened? Include useful details such as what you saw and where it occurred."></textarea></label>
-                <label>Reporter name <span class="optional">Optional</span><input id="mobileReporterName" type="text" maxlength="100" placeholder="Your name"></label>
-                <button id="mobileSubmitReport" type="submit" class="submit-report-button">SEND EMERGENCY REPORT</button>
-                <div id="mobileReportResult" class="mobile-result" hidden></div>
-            </form>
+
+        <!-- REPORT BUTTON -->
+
+        <button
+            class="emergency-button"
+            id="mobileReportButton"
+            type="button"
+        >
+
+            <span class="emergency-icon">
+                ⚠
+            </span>
+
+            <span>
+
+                <strong>
+                    REPORT EMERGENCY
+                </strong>
+
+                <small>
+                    Send an alert to administrators
+                </small>
+
+            </span>
+
+        </button>
+
+
+        <!-- SYSTEM STATUS -->
+
+        <section class="mobile-card">
+
+            <div class="mobile-card-title">
+
+                <span>
+                    ●
+                </span>
+
+                System Status
+
+            </div>
+
+            <div class="mobile-status-row">
+
+                <span>
+                    Emergency System
+                </span>
+
+                <strong>
+                    Operational
+                </strong>
+
+            </div>
+
+            <div class="mobile-status-row">
+
+                <span>
+                    Connection
+                </span>
+
+                <strong id="mobileConnectionStatus">
+                    Online
+                </strong>
+
+            </div>
+
         </section>
 
-        <section id="mobileAlertsPage" class="mobile-page">
-            <div class="mobile-page-heading"><button id="mobileAlertsBack" class="back-button">‹</button><div><p class="eyebrow">INFORMATION FLOW</p><h1>Alerts</h1></div></div>
-            <div id="mobileAlertsContainer" class="mobile-alert-list"><div class="mobile-empty-alerts"><strong>Loading alerts...</strong></div></div>
+
+        <!-- OFFICIAL ALERTS -->
+
+        <button
+            id="mobileAlertsButton"
+            class="mobile-card mobile-action-card"
+            type="button"
+        >
+
+            <div class="mobile-card-title">
+
+                <span>
+                    📢
+                </span>
+
+                <span>
+                    Official Alerts & Announcements
+                </span>
+
+                <span class="mobile-arrow">
+                    ›
+                </span>
+
+            </div>
+
+            <div class="mobile-alert-preview">
+
+                <strong id="mobileAlertPreviewTitle">
+                    Checking official information...
+                </strong>
+
+                <small id="mobileAlertPreviewText">
+                    Loading alerts and local announcements.
+                </small>
+
+            </div>
+
+        </button>
+
+
+        <!-- LOCATION -->
+
+        <section class="mobile-card">
+
+            <div class="mobile-card-title">
+
+                <span>
+                    📍
+                </span>
+
+                <span>
+                    Reporting Location
+                </span>
+
+            </div>
+
+            <div class="location-box">
+
+                <strong>
+                    Location selected during reporting
+                </strong>
+
+                <small>
+                    The selected location is attached to the emergency report.
+                </small>
+
+            </div>
+
         </section>
+
     </main>
 
-    <nav class="mobile-bottom-nav">
-        <button id="mobileHomeNav" class="mobile-nav-item active"><span>⌂</span><small>Home</small></button>
-        <button id="mobileReportNav" class="mobile-nav-item"><span>!</span><small>Report</small></button>
-        <button id="mobileAlertsNav" class="mobile-nav-item"><span>◉</span><small>Alerts</small></button>
-    </nav>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="./app.js"></script>
-</body>
-</html>
+    <!-- =================================================
+         MOBILE REPORT PAGE
+    ================================================== -->
+
+    <main
+        id="mobileReportPage"
+        class="mobile-page"
+    >
+
+        <section class="mobile-page-heading">
+
+            <button
+                id="mobileReportBack"
+                class="mobile-back-button"
+                type="button"
+            >
+                ‹
+            </button>
+
+            <div>
+
+                <p>
+                    Emergency assistance
+                </p>
+
+                <h1>
+                    Report Emergency
+                </h1>
+
+            </div>
+
+        </section>
+
+
+        <form
+            id="mobileReportForm"
+            class="mobile-form"
+        >
+
+            <label class="mobile-field">
+
+                <span>
+                    Emergency Type
+                </span>
+
+                <select
+                    id="mobileEmergencyType"
+                    required
+                >
+
+                    <option
+                        value=""
+                        selected
+                        disabled
+                    >
+                        Select emergency type
+                    </option>
+
+                    <option value="Fire">
+                        Fire
+                    </option>
+
+                    <option value="Medical">
+                        Medical
+                    </option>
+
+                    <option value
+```
