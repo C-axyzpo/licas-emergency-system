@@ -1,14 +1,10 @@
-index.html
-@@ -1,1138 +1,1327 @@
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
 
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>LICAS | Emergency Response System</title>
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
@@ -23,18 +19,15 @@ index.html
         href="style.css"
     >
 
-    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 
 <!-- =====================================================
-     MOBILE APP
      MOBILE APPLICATION
 ===================================================== -->
 
-<div id="mobileApp" class="mobile-app">
 <div
     id="mobileApp"
     class="mobile-app"
@@ -45,7 +38,6 @@ index.html
     <header class="mobile-header">
 
         <div>
-            <div class="mobile-brand">LICAS</div>
 
             <div class="mobile-brand">
                 LICAS
@@ -79,12 +71,10 @@ index.html
 
         <section class="mobile-welcome">
 
-            <p>Emergency assistance</p>
             <p>
                 Emergency assistance
             </p>
 
-            <h1>How can we help?</h1>
             <h1>
                 How can we help?
             </h1>
@@ -92,7 +82,6 @@ index.html
         </section>
 
 
-        <!-- REPORT -->
         <!-- REPORT BUTTON -->
 
         <button
@@ -106,7 +95,6 @@ index.html
             </span>
 
             <span>
-                <strong>REPORT EMERGENCY</strong>
 
                 <strong>
                     REPORT EMERGENCY
@@ -126,7 +114,6 @@ index.html
         <section class="mobile-card">
 
             <div class="mobile-card-title">
-                <span>●</span>
 
                 <span>
                     ●
@@ -173,13 +160,11 @@ index.html
 
             <div class="mobile-card-title">
 
-                <span class="alert-icon">
                 <span>
                     📢
                 </span>
 
                 <span>
-                    Official Alerts
                     Official Alerts & Announcements
                 </span>
 
@@ -192,12 +177,10 @@ index.html
             <div class="mobile-alert-preview">
 
                 <strong id="mobileAlertPreviewTitle">
-                    Checking official alerts...
                     Checking official information...
                 </strong>
 
                 <small id="mobileAlertPreviewText">
-                    Loading PHIVOLCS / NDRRMC advisories.
                     Loading alerts and local announcements.
                 </small>
 
@@ -211,8 +194,6 @@ index.html
         <section class="mobile-card">
 
             <div class="mobile-card-title">
-                <span>📍</span>
-                <span>Your Location</span>
 
                 <span>
                     📍
@@ -231,7 +212,6 @@ index.html
                 </strong>
 
                 <small>
-                    Your location is used only when submitting an emergency report.
                     The selected location is attached to the emergency report.
                 </small>
 
@@ -263,7 +243,6 @@ index.html
 
             <div>
 
-                <p>Emergency assistance</p>
                 <p>
                     Emergency assistance
                 </p>
@@ -282,8 +261,6 @@ index.html
             class="mobile-form"
         >
 
-            <!-- TYPE -->
-
             <label class="mobile-field">
 
                 <span>
@@ -295,7 +272,6 @@ index.html
                     required
                 >
 
-                    <option value="" selected disabled>
                     <option
                         value=""
                         selected
@@ -333,8 +309,6 @@ index.html
             </label>
 
 
-            <!-- LOCATION -->
-
             <label class="mobile-field">
 
                 <span>
@@ -346,7 +320,6 @@ index.html
                     required
                 >
 
-                    <option value="" selected disabled>
                     <option
                         value=""
                         selected
@@ -380,8 +353,6 @@ index.html
             </label>
 
 
-            <!-- SEVERITY -->
-
             <label class="mobile-field">
 
                 <span>
@@ -393,7 +364,6 @@ index.html
                     required
                 >
 
-                    <option value="" selected disabled>
                     <option
                         value=""
                         selected
@@ -419,8 +389,6 @@ index.html
             </label>
 
 
-            <!-- DESCRIPTION -->
-
             <label class="mobile-field">
 
                 <span>
@@ -436,13 +404,10 @@ index.html
             </label>
 
 
-            <!-- NAME -->
-
             <label class="mobile-field">
 
                 <span>
                     Your Name
-                    <small>(Optional)</small>
                     <small>
                         (Optional)
                     </small>
@@ -467,8 +432,6 @@ index.html
 
         </form>
 
-
-        <!-- REPORT RESULT -->
 
         <div
             id="mobileReportResult"
@@ -500,13 +463,11 @@ index.html
 
             <div>
 
-                <p>Official information</p>
                 <p>
                     External information
                 </p>
 
                 <h1>
-                    Official Alerts
                     Alerts & Announcements
                 </h1>
 
@@ -524,12 +485,10 @@ index.html
                 </span>
 
                 <span>
-                    Official Advisories
                     Information Feed
                 </span>
 
             </div>
-
 
             <div
                 id="mobileAlertsList"
@@ -543,7 +502,6 @@ index.html
                     </div>
 
                     <strong>
-                        Loading official alerts
                         Loading information
                     </strong>
 
@@ -572,7 +530,6 @@ index.html
             type="button"
         >
 
-            <span>⌂</span>
             <span>
                 ⌂
             </span>
@@ -590,7 +547,6 @@ index.html
             type="button"
         >
 
-            <span>⚠</span>
             <span>
                 ⚠
             </span>
@@ -608,7 +564,6 @@ index.html
             type="button"
         >
 
-            <span>📢</span>
             <span>
                 📢
             </span>
@@ -696,7 +651,6 @@ index.html
                 data-page="alerts"
             >
                 <span>⚠</span>
-                Official Alerts
                 Alerts & Announcements
             </button>
 
@@ -791,8 +745,6 @@ index.html
                     </h3>
 
                     <p>
-                        Real-time monitoring of emergency events,
-                        response units, reports, and official alerts.
                         A consolidated view of emergency events,
                         monitoring units, community reports,
                         sensor activity, and external information.
@@ -812,7 +764,6 @@ index.html
             </div>
 
 
-            <!-- STATISTICS -->
             <!-- MAIN STATISTICS -->
 
             <div class="stats-grid">
@@ -847,7 +798,6 @@ index.html
                     <div>
 
                         <span>
-                            Online Units
                             Connected Units
                         </span>
 
@@ -890,7 +840,6 @@ index.html
                     <div>
 
                         <span>
-                            Official Alerts
                             External Information
                         </span>
 
@@ -905,12 +854,10 @@ index.html
             </div>
 
 
-            <!-- TWO COLUMNS -->
             <!-- CURRENT EMERGENCIES + MONITORING -->
 
             <div class="overview-grid">
 
-            <div class="content-grid">
 
                 <div class="panel">
 
@@ -921,7 +868,6 @@ index.html
                         </p>
 
                         <h3>
-                            Emergency Monitoring
                             Active Emergency Events
                         </h3>
 
@@ -941,7 +887,6 @@ index.html
                             </strong>
 
                             <span>
-                                All monitored areas are currently clear.
                                 No unresolved emergency events are currently recorded.
                             </span>
 
@@ -957,7 +902,6 @@ index.html
                     <div class="panel-header">
 
                         <p class="eyebrow">
-                            SYSTEM
                             FIELD NETWORK
                         </p>
 
@@ -973,7 +917,6 @@ index.html
                         <div class="monitor-row">
 
                             <span>
-                                Connected Units
                                 Registered Units
                             </span>
 
@@ -1016,7 +959,6 @@ index.html
                         <div class="monitor-row">
 
                             <span>
-                                Last Update
                                 Last Dashboard Update
                             </span>
 
@@ -1194,7 +1136,6 @@ index.html
 
 
         <!-- =================================================
-             UNITS
              MONITORING UNITS
         ================================================== -->
 
@@ -1222,7 +1163,6 @@ index.html
             >
 
                 <div class="empty-state panel-empty">
-                    No monitoring units found.
 
                     <strong>
                         Loading monitoring units
@@ -1241,7 +1181,6 @@ index.html
 
 
         <!-- =================================================
-             REPORTS
              USER REPORTS
         ================================================== -->
 
@@ -1257,7 +1196,6 @@ index.html
                 </p>
 
                 <h3>
-                    User Reports
                     Student & User Reports
                 </h3>
 
@@ -1279,7 +1217,6 @@ index.html
                                 </th>
 
                                 <th>
-                                    Type
                                     Report Type
                                 </th>
 
@@ -1326,7 +1263,6 @@ index.html
 
 
         <!-- =================================================
-             OFFICIAL ALERTS
              OFFICIAL / EXTERNAL ALERTS
         ================================================== -->
 
@@ -1342,20 +1278,17 @@ index.html
                 </p>
 
                 <h3>
-                    Official Alerts
                     Alerts & Announcements
                 </h3>
 
             </div>
 
 
-            <div id="alertsContainer">
             <div
                 id="alertsContainer"
             >
 
                 <div class="empty-state panel-empty">
-                    No official alerts available.
 
                     <strong>
                         Loading external information
@@ -1376,14 +1309,11 @@ index.html
 </div>
 
 
-<!-- SUPABASE -->
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- =====================================================
      SUPABASE
 ===================================================== -->
 
-<script src="./app.js"></script>
 <script
     src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
 ></script>
