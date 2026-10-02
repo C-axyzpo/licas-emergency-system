@@ -6,7 +6,7 @@ const supabase = createClient(
 );
 
 // =====================================================
-// HELPERShatfot
+// HELPERS
 // =====================================================
 
 function decodeHtml(text = "") {
