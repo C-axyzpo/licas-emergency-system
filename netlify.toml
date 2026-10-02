@@ -1,0 +1,4 @@
+[build.environment]
+  # app.js contains the Supabase project URL and publishable (browser-safe) key,
+  # which are public by design. Skip only this file so real secrets elsewhere are still caught.
+  SECRETS_SCAN_OMIT_PATHS = "app.js"
