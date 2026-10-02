@@ -1,5 +1,6 @@
-```javascript
+app.js
 console.log("LICAS app.js loaded");
+
 
 // =====================================================
 // SUPABASE CONNECTION
@@ -8,12 +9,13 @@ console.log("LICAS app.js loaded");
 const SUPABASE_URL =
     "https://gqnyqaxwgfkdglkjuidc.supabase.co";
 
+/*
+   KEEP YOUR EXISTING SUPABASE PUBLISHABLE KEY HERE.
+*/
 const SUPABASE_KEY =
     "sb_publishable_Ld7RcE6is_Ln_iAcqMYVLg_MZw58l3c";
 
-const supabaseClient = supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
+@@ -20,6 +16,17 @@ const supabaseClient = supabase.createClient(
 );
 
 
@@ -21,47 +23,17 @@ const supabaseClient = supabase.createClient(
 // CONFIGURATION
 // =====================================================
 
+// A unit is considered connected only if its ESP32
+// has updated last_seen within this period.
+//
+// Adjust this if your ESP32 heartbeat interval changes.
 const UNIT_ONLINE_WINDOW_MS = 60 * 1000;
 
 
 // =====================================================
 // HELPERS
 // =====================================================
-
-function escapeHTML(value) {
-
-    if (value === null || value === undefined) {
-        return "";
-    }
-
-    return String(value)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-
-function formatDate(date) {
-
-    if (!date) {
-        return "Unknown";
-    }
-
-    const parsed = new Date(date);
-
-    if (isNaN(parsed.getTime())) {
-        return "Unknown";
-    }
-
-    return parsed.toLocaleString(
-        "en-PH",
-        {
-            dateStyle: "short",
-            timeStyle: "short"
-        }
-    );
+@@ -61,6 +68,52 @@ function formatDate(date) {
 }
 
 
@@ -114,20 +86,7 @@ function formatRelativeTime(date) {
 function formatNumber(value, decimals = 1) {
 
     if (
-        value === null ||
-        value === undefined ||
-        value === ""
-    ) {
-        return "Unavailable";
-    }
-
-    const number = Number(value);
-
-    if (isNaN(number)) {
-        return "Unavailable";
-    }
-
-    return number.toFixed(decimals);
+@@ -81,6 +134,185 @@ function formatNumber(value, decimals = 1) {
 }
 
 
@@ -313,23 +272,10 @@ function getSourceLink(alert) {
 // =====================================================
 // DESKTOP PAGE NAVIGATION
 // =====================================================
-
-const navButtons =
-    document.querySelectorAll(".nav-button");
-
-const pages =
-    document.querySelectorAll(".page");
-
-const pageTitle =
-    document.getElementById("pageTitle");
-
-
-navButtons.forEach(button => {
-
-    button.addEventListener("click", async () => {
-
+@@ -102,36 +334,31 @@ navButtons.forEach(button => {
         const targetPage =
             button.dataset.page;
+
 
         navButtons.forEach(btn => {
             btn.classList.remove("active");
@@ -337,9 +283,11 @@ navButtons.forEach(button => {
 
         button.classList.add("active");
 
+
         pages.forEach(page => {
             page.classList.remove("active-page");
         });
+
 
         const target =
             document.getElementById(targetPage);
@@ -348,60 +296,49 @@ navButtons.forEach(button => {
             target.classList.add("active-page");
         }
 
+
         if (pageTitle) {
             pageTitle.textContent =
                 button.textContent.trim();
         }
 
+
+        /*
+           Refresh page-specific information.
+        */
         if (targetPage === "overview") {
             await loadDashboard();
         }
 
         if (targetPage === "reports") {
             await loadUserReports();
-        }
-
-        if (targetPage === "alerts") {
-            await loadOfficialAlerts();
-        }
-
-        if (targetPage === "emergencies") {
-            await loadEmergencyEvents();
-        }
-
-        if (targetPage === "units") {
+@@ -149,9 +376,7 @@ navButtons.forEach(button => {
             await loadUnits();
             await loadLatestSensorReadings();
         }
+
     });
+
 });
 
 
-// =====================================================
-// TIME
-// =====================================================
-
-function updateTime() {
-
-    const element =
-        document.getElementById("currentTime");
-
-    if (!element) {
+@@ -168,10 +393,8 @@ function updateTime() {
         return;
     }
 
+    const now = new Date();
+
     element.textContent =
+        now.toLocaleTimeString(
         new Date().toLocaleTimeString(
             "en-PH",
             {
                 hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit"
-            }
-        );
+@@ -182,116 +405,116 @@ function updateTime() {
 }
 
 setInterval(updateTime, 1000);
+
 updateTime();
 
 
@@ -416,11 +353,13 @@ async function loadUnits() {
 
     console.log("Loading LICAS units...");
 
+
     const { data, error } =
         await supabaseClient
             .from("units")
             .select("*")
             .order("id", { ascending: true });
+
 
     if (error) {
 
@@ -429,28 +368,40 @@ async function loadUnits() {
             error
         );
 
+        return;
         return [];
     }
+
+
+    console.log("Units found:", data);
 
     cachedUnits = data || [];
 
     const onlineCount =
+        data.filter(
+            unit =>
+                String(unit.status).toLowerCase() ===
+                "online"
         cachedUnits.filter(unit =>
             isUnitOnline(unit.last_seen)
         ).length;
+
 
     const onlineUnits =
         document.getElementById("onlineUnits");
 
     if (onlineUnits) {
+        onlineUnits.textContent = onlineCount;
         onlineUnits.textContent =
             onlineCount;
     }
+
 
     const monitorUnits =
         document.getElementById("monitorUnits");
 
     if (monitorUnits) {
+        monitorUnits.textContent = data.length;
         monitorUnits.textContent =
             cachedUnits.length;
     }
@@ -466,51 +417,64 @@ async function loadUnits() {
     }
 
     const container =
+        document.getElementById("unitsContainer");
+
         document.getElementById(
             "unitsContainer"
         );
 
     if (!container) {
+        return;
         return cachedUnits;
     }
 
+
+    if (!data.length) {
     if (!cachedUnits.length) {
 
         container.innerHTML = `
             <div class="empty-state panel-empty">
-
-                <div class="empty-icon">
-                    ◈
-                </div>
-
-                <strong>
-                    No monitoring units found
-                </strong>
-
+                No monitoring units found.
+                <div class="empty-icon">◈</div>
+                <strong>No monitoring units found</strong>
                 <span>
                     LICAS has not received any registered monitoring units yet.
                 </span>
-
             </div>
         `;
 
+        return;
         return cachedUnits;
     }
 
+
     container.innerHTML =
+        data.map(unit => {
+
+            /*
+               unit.id = database primary key
+               unit.unit_id = human-readable LICAS ID
+            */
         cachedUnits.map(unit => {
 
             const displayUnitID =
                 unit.unit_id ||
                 `Unit ${unit.id}`;
 
+
             const location =
                 unit.location ||
                 "Location not assigned";
 
+
             const floor =
                 unit.floor ||
                 "";
+
+
+            const status =
+                unit.status ||
+                "offline";
 
             const online =
                 isUnitOnline(
@@ -518,54 +482,49 @@ async function loadUnits() {
                 );
 
             return `
+                <div
+                    class="unit-card"
                 <article
-                    class="unit-card ${
-                        online
-                            ? "unit-online"
-                            : "unit-offline"
-                    }"
+                    class="unit-card ${online ? "unit-online" : "unit-offline"}"
                     data-unit-id="${escapeHTML(unit.id)}"
                 >
 
-                    <div class="unit-top">
-
-                        <div>
-
-                            <div class="unit-name">
-                                ${escapeHTML(displayUnitID)}
+@@ -304,101 +527,107 @@ async function loadUnits() {
                             </div>
 
                             <div class="unit-location">
+
                                 ${escapeHTML(location)}
+
                                 ${
                                     floor
+                                    ? " · " +
+                                      escapeHTML(floor)
+                                    : ""
                                         ? " · " +
                                           escapeHTML(floor)
                                         : ""
                                 }
+
                             </div>
 
                         </div>
 
+
+                        <div class="unit-status">
                         <div
-                            class="unit-status ${
-                                online
-                                    ? "online"
-                                    : "offline"
-                            }"
+                            class="unit-status ${online ? "online" : "offline"}"
                         >
 
                             <span class="status-dot"></span>
 
-                            ${
-                                online
-                                    ? "CONNECTED"
-                                    : "OFFLINE"
-                            }
+                            ${escapeHTML(status)}
+                            ${online ? "CONNECTED" : "OFFLINE"}
 
                         </div>
 
                     </div>
+
 
                     <div class="unit-details">
 
@@ -574,6 +533,7 @@ async function loadUnits() {
                             <span>
                                 Unit ID
                             </span>
+                            <span>Unit ID</span>
 
                             <strong>
                                 ${escapeHTML(displayUnitID)}
@@ -581,11 +541,13 @@ async function loadUnits() {
 
                         </div>
 
+
                         <div class="unit-detail">
 
                             <span>
                                 Database ID
                             </span>
+                            <span>Database ID</span>
 
                             <strong>
                                 ${escapeHTML(unit.id)}
@@ -595,9 +557,7 @@ async function loadUnits() {
 
                         <div class="unit-detail">
 
-                            <span>
-                                Last Seen
-                            </span>
+                            <span>Last Seen</span>
 
                             <strong>
                                 ${formatRelativeTime(
@@ -610,10 +570,12 @@ async function loadUnits() {
                         <div class="unit-detail">
 
                             <span>
-                                Last Database Update
+                                Last Seen
                             </span>
+                            <span>Last Database Update</span>
 
                             <strong>
+                                ${formatDate(unit.last_seen)}
                                 ${formatDate(
                                     unit.last_seen
                                 )}
@@ -623,14 +585,17 @@ async function loadUnits() {
 
                     </div>
 
+
                     <div class="unit-sensors">
 
                         <div class="sensor-loading">
+                            Loading sensor data...
                             Loading latest sensor data...
                         </div>
 
                     </div>
 
+                </div>
                 </article>
             `;
 
@@ -653,63 +618,90 @@ async function loadLatestSensorReadings() {
         "Loading latest LICAS sensor readings..."
     );
 
+
     const { data, error } =
         await supabaseClient
             .from("sensor_readings")
-            .select("*")
-            .order(
-                "recorded_at",
-                {
+@@ -409,8 +638,7 @@ async function loadLatestSensorReadings() {
                     ascending: false
                 }
             )
+            .limit(100);
+
             .limit(200);
 
     if (error) {
 
-        console.error(
-            "SENSOR READINGS DATABASE ERROR:",
-            error
+@@ -422,335 +650,337 @@ async function loadLatestSensorReadings() {
+        return;
+    }
+
+
+    if (!data || !data.length) {
+
+        console.log(
+            "No sensor readings found."
         );
 
         return;
     }
 
-    if (!data || !data.length) {
-        cachedLatestReadings = {};
-        updateOverviewSensorSummary();
-        return;
-    }
+
+    /*
+       The results are sorted newest first.
+
+       Therefore, the first reading we encounter
+       for each unit is its latest reading.
+    */
 
     const latestByUnit = {};
+
 
     data.forEach(reading => {
 
         const unitID =
             String(reading.unit_id);
 
+
         if (!latestByUnit[unitID]) {
+
             latestByUnit[unitID] =
                 reading;
+
         }
+
     });
 
     cachedLatestReadings =
         latestByUnit;
 
+    console.log(
+        "Latest sensor readings:",
+        latestByUnit
+    );
+
     Object.entries(latestByUnit)
         .forEach(
             ([unitId, reading]) => {
 
+    /*
+       Update each monitoring unit card.
+    */
                 const card =
                     document.querySelector(
                         `.unit-card[data-unit-id="${unitId}"]`
                     );
 
+    Object.entries(latestByUnit).forEach(
+        ([unitId, reading]) => {
                 if (!card) {
                     return;
                 }
 
+            const card =
+                document.querySelector(
+                    `.unit-card[data-unit-id="${unitId}"]`
+                );
                 const sensorContainer =
                     card.querySelector(
                         ".unit-sensors"
@@ -719,6 +711,9 @@ async function loadLatestSensorReadings() {
                     return;
                 }
 
+            if (!card) {
+                return;
+            }
                 let humanStatus =
                     "Unavailable";
 
@@ -740,6 +735,10 @@ async function loadLatestSensorReadings() {
                         3
                     );
 
+            const sensorContainer =
+                card.querySelector(
+                    ".unit-sensors"
+                );
                 let smokeStatus =
                     "Unavailable";
 
@@ -757,6 +756,9 @@ async function loadLatestSensorReadings() {
                     reading.target_state ||
                     "None";
 
+            if (!sensorContainer) {
+                return;
+            }
                 let sensorStatus =
                     "Monitoring";
 
@@ -767,6 +769,9 @@ async function loadLatestSensorReadings() {
                         "PRESENCE";
                 }
 
+            // -----------------------------------------
+            // HUMAN PRESENCE
+            // -----------------------------------------
                 if (
                     reading.vibration_level !== null &&
                     Number(
@@ -777,6 +782,8 @@ async function loadLatestSensorReadings() {
                         "MOVEMENT";
                 }
 
+            let humanStatus =
+                "No presence detected";
                 if (
                     reading.smoke_level !== null &&
                     reading.smoke_level !== undefined
@@ -787,25 +794,34 @@ async function loadLatestSensorReadings() {
 
                 sensorContainer.innerHTML = `
 
+            if (reading.human_presence === true) {
                     <div class="unit-sensor-header">
 
+                humanStatus =
+                    "Human detected";
                         <strong>
                             Latest Sensor Reading
                         </strong>
 
+            } else if (
+                reading.human_presence === false
+            ) {
                         <span class="sensor-status">
-                            ${escapeHTML(
-                                sensorStatus
-                            )}
+                            ${escapeHTML(sensorStatus)}
                         </span>
 
+                humanStatus =
+                    "No presence detected";
+            }
                     </div>
 
                     <div class="sensor-grid">
 
+            // -----------------------------------------
+            // VIBRATION
+            // -----------------------------------------
                         <div class="sensor-item">
                             <span>Temperature</span>
-
                             <strong>
                                 ${
                                     reading.temperature !== null &&
@@ -819,9 +835,13 @@ async function loadLatestSensorReadings() {
                             </strong>
                         </div>
 
+            const vibration =
+                formatNumber(
+                    reading.vibration_level,
+                    3
+                );
                         <div class="sensor-item">
                             <span>Humidity</span>
-
                             <strong>
                                 ${
                                     reading.humidity !== null &&
@@ -837,7 +857,6 @@ async function loadLatestSensorReadings() {
 
                         <div class="sensor-item">
                             <span>Human Presence</span>
-
                             <strong>
                                 ${escapeHTML(
                                     humanStatus
@@ -845,9 +864,11 @@ async function loadLatestSensorReadings() {
                             </strong>
                         </div>
 
+            // -----------------------------------------
+            // SMOKE
+            // -----------------------------------------
                         <div class="sensor-item">
                             <span>Vibration</span>
-
                             <strong>
                                 ${escapeHTML(
                                     vibration
@@ -855,9 +876,10 @@ async function loadLatestSensorReadings() {
                             </strong>
                         </div>
 
+            let smokeStatus =
+                "Unavailable";
                         <div class="sensor-item">
                             <span>Target State</span>
-
                             <strong>
                                 ${escapeHTML(
                                     targetState
@@ -867,7 +889,6 @@ async function loadLatestSensorReadings() {
 
                         <div class="sensor-item">
                             <span>Smoke Level</span>
-
                             <strong>
                                 ${escapeHTML(
                                     smokeStatus
@@ -875,15 +896,140 @@ async function loadLatestSensorReadings() {
                             </strong>
                         </div>
 
+            if (
+                reading.smoke_level !== null &&
+                reading.smoke_level !== undefined
+            ) {
                     </div>
 
+                smokeStatus =
+                    String(
+                        reading.smoke_level
+                    );
+            }
                     <div class="sensor-last-reading">
 
+
+            // -----------------------------------------
+            // TARGET STATE
+            // -----------------------------------------
+
+            const targetState =
+                reading.target_state ||
+                "None";
+
+
+            // -----------------------------------------
+            // STATUS
+            // -----------------------------------------
+
+            let sensorStatus =
+                "Monitoring";
+
+
+            if (
+                reading.human_presence === true
+            ) {
+
+                sensorStatus =
+                    "MONITOR";
+
+            } else if (
+                reading.vibration_level !== null &&
+                Number(reading.vibration_level) >= 0.20
+            ) {
+
+                sensorStatus =
+                    "MONITOR";
+
+            } else if (
+                reading.smoke_level !== null
+            ) {
+
+                sensorStatus =
+                    "MONITOR";
+            }
+
+
+            // -----------------------------------------
+            // RENDER SENSOR DATA
+            // -----------------------------------------
+
+            sensorContainer.innerHTML = `
+
+                <div class="unit-sensor-header">
+
+                    <strong>
+                        Live Sensor Data
+                    </strong>
+
+                    <span class="sensor-status">
+                        ${escapeHTML(sensorStatus)}
+                    </span>
+
+                </div>
+
+
+                <div class="sensor-grid">
+
+                    <div class="sensor-item">
+
+                        <span>
+                            Temperature
+                        </span>
+
+                        <strong>
+                            ${
+                                reading.temperature !== null &&
+                                reading.temperature !== undefined
+
+                                ? formatNumber(
+                                    reading.temperature,
+                                    1
+                                ) + " °C"
+
+                                : "Unavailable"
+                            }
+                        </strong>
+
+                    </div>
+
+
+                    <div class="sensor-item">
+
+                        <span>
+                            Humidity
+                        </span>
                         <span>
                             Recorded
                         </span>
 
                         <strong>
+                            ${
+                                reading.humidity !== null &&
+                                reading.humidity !== undefined
+
+                                ? formatNumber(
+                                    reading.humidity,
+                                    1
+                                ) + " %"
+
+                                : "Unavailable"
+                            }
+                        </strong>
+
+                    </div>
+
+
+                    <div class="sensor-item">
+
+                        <span>
+                            Human Presence
+                        </span>
+
+                        <strong>
+                            ${escapeHTML(
+                                humanStatus
                             ${formatDate(
                                 reading.recorded_at
                             )}
@@ -897,13 +1043,23 @@ async function loadLatestSensorReadings() {
     updateOverviewSensorSummary();
 }
 
+                    <div class="sensor-item">
 
+                        <span>
+                            Vibration
+                        </span>
 // =====================================================
 // OVERVIEW SENSOR SUMMARY
 // =====================================================
 
+                        <strong>
+                            ${escapeHTML(
+                                vibration
+                            )} g
+                        </strong>
 function updateOverviewSensorSummary() {
 
+                    </div>
     const container =
         document.getElementById(
             "overviewSensorSummary"
@@ -913,27 +1069,32 @@ function updateOverviewSensorSummary() {
         return;
     }
 
+                    <div class="sensor-item">
     const readings =
         Object.values(
             cachedLatestReadings
         );
 
+                        <span>
+                            Target State
+                        </span>
     if (!readings.length) {
 
+                        <strong>
+                            ${escapeHTML(
+                                targetState
+                            )}
+                        </strong>
         container.innerHTML = `
             <div class="empty-state compact-empty">
-
-                <strong>
-                    No sensor readings yet
-                </strong>
-
+                <strong>No sensor readings yet</strong>
                 <span>
                     Latest ESP32 sensor values will appear here.
                 </span>
-
             </div>
         `;
 
+                    </div>
         return;
     }
 
@@ -941,14 +1102,23 @@ function updateOverviewSensorSummary() {
     let movementCount = 0;
     let smokeAvailable = 0;
 
+                    <div class="sensor-item">
     readings.forEach(reading => {
 
+                        <span>
+                            Smoke Level
+                        </span>
         if (
             reading.human_presence === true
         ) {
             presenceCount++;
         }
 
+                        <strong>
+                            ${escapeHTML(
+                                smokeStatus
+                            )}
+                        </strong>
         if (
             reading.vibration_level !== null &&
             Number(
@@ -958,6 +1128,7 @@ function updateOverviewSensorSummary() {
             movementCount++;
         }
 
+                    </div>
         if (
             reading.smoke_level !== null &&
             reading.smoke_level !== undefined
@@ -966,10 +1137,12 @@ function updateOverviewSensorSummary() {
         }
     });
 
+                </div>
     container.innerHTML = `
 
         <div class="overview-mini-grid">
 
+                <div class="sensor-last-reading">
             <div class="overview-mini-card">
                 <span>Units Reporting</span>
                 <strong>
@@ -977,6 +1150,9 @@ function updateOverviewSensorSummary() {
                 </strong>
             </div>
 
+                    <span>
+                        Last Sensor Reading
+                    </span>
             <div class="overview-mini-card">
                 <span>Presence Detected</span>
                 <strong>
@@ -984,6 +1160,11 @@ function updateOverviewSensorSummary() {
                 </strong>
             </div>
 
+                    <strong>
+                        ${formatDate(
+                            reading.recorded_at
+                        )}
+                    </strong>
             <div class="overview-mini-card">
                 <span>Movement Signals</span>
                 <strong>
@@ -991,6 +1172,7 @@ function updateOverviewSensorSummary() {
                 </strong>
             </div>
 
+                </div>
             <div class="overview-mini-card">
                 <span>Smoke Data Available</span>
                 <strong>
@@ -998,6 +1180,9 @@ function updateOverviewSensorSummary() {
                 </strong>
             </div>
 
+            `;
+        }
+    );
         </div>
     `;
 }
@@ -1007,11 +1192,17 @@ function updateOverviewSensorSummary() {
 // LOAD EMERGENCY EVENTS
 // =====================================================
 
+async function loadEmergencyEvents() {
 let cachedEmergencyEvents = [];
 
+    const table =
+        document.getElementById("emergencyTable");
 
 async function loadEmergencyEvents() {
 
+    if (!table) {
+        return;
+    }
     const table =
         document.getElementById(
             "emergencyTable"
@@ -1024,17 +1215,13 @@ async function loadEmergencyEvents() {
 
     const { data, error } =
         await supabaseClient
-            .from("emergency_events")
-            .select(`
-                *,
-                units (
-                    unit_name,
-                    unit_id,
-                    location
-                )
+@@ -765,9 +995,11 @@ async function loadEmergencyEvents() {
             `)
             .order(
                 "detected_at",
+                { ascending: false }
+            );
+
                 {
                     ascending: false
                 }
@@ -1043,11 +1230,7 @@ async function loadEmergencyEvents() {
 
     if (error) {
 
-        console.error(
-            "EMERGENCY DATABASE ERROR:",
-            error
-        );
-
+@@ -779,115 +1011,235 @@ async function loadEmergencyEvents() {
         return;
     }
 
@@ -1055,6 +1238,8 @@ async function loadEmergencyEvents() {
         data || [];
 
     const active =
+        data.filter(event =>
+            event.response_status !== "Resolved"
         cachedEmergencyEvents.filter(
             event =>
                 String(
@@ -1063,12 +1248,15 @@ async function loadEmergencyEvents() {
                 "resolved"
         );
 
+
     const activeEmergencies =
         document.getElementById(
             "activeEmergencies"
         );
 
+
     if (activeEmergencies) {
+
         activeEmergencies.textContent =
             active.length;
     }
@@ -1079,10 +1267,7 @@ async function loadEmergencyEvents() {
 
             table.innerHTML = `
                 <tr>
-                    <td
-                        colspan="5"
-                        class="table-empty"
-                    >
+                    <td colspan="5" class="table-empty">
                         No emergency events recorded.
                     </td>
                 </tr>
@@ -1152,7 +1337,17 @@ async function loadEmergencyEvents() {
     );
 }
 
+    if (!data.length) {
 
+        table.innerHTML = `
+            <tr>
+                <td
+                    colspan="5"
+                    class="table-empty"
+                >
+                    No emergency events recorded.
+                </td>
+            </tr>
 // =====================================================
 // OVERVIEW EMERGENCIES
 // =====================================================
@@ -1180,19 +1375,11 @@ function renderOverviewEmergencies(events) {
 
         container.innerHTML = `
             <div class="empty-state">
-
-                <div class="empty-icon">
-                    ✓
-                </div>
-
-                <strong>
-                    No active emergencies
-                </strong>
-
+                <div class="empty-icon">✓</div>
+                <strong>No active emergencies</strong>
                 <span>
                     No unresolved emergency events are currently recorded.
                 </span>
-
             </div>
         `;
 
@@ -1204,11 +1391,17 @@ function renderOverviewEmergencies(events) {
             .slice(0, 4)
             .map(event => {
 
+    table.innerHTML =
+        data.map(event => {
                 const unit =
                     event.units?.unit_name ||
                     event.units?.unit_id ||
                     "Unknown unit";
 
+            const unit =
+                event.units?.unit_name ||
+                event.units?.unit_id ||
+                "Unknown";
                 const location =
                     event.units?.location ||
                     "Location unavailable";
@@ -1216,12 +1409,22 @@ function renderOverviewEmergencies(events) {
                 return `
                     <div class="overview-emergency-row">
 
+            return `
+                <tr>
                         <div class="overview-emergency-icon">
                             🚨
                         </div>
 
+                    <td>
+                        ${formatDate(
+                            event.detected_at
+                        )}
+                    </td>
                         <div class="overview-emergency-main">
 
+                    <td>
+                        ${escapeHTML(unit)}
+                    </td>
                             <strong>
                                 ${escapeHTML(
                                     event.emergency_type ||
@@ -1229,16 +1432,33 @@ function renderOverviewEmergencies(events) {
                                 )}
                             </strong>
 
+                    <td>
+                        ${escapeHTML(
+                            event.emergency_type
+                        )}
+                    </td>
                             <span>
                                 ${escapeHTML(unit)}
                                 ·
                                 ${escapeHTML(location)}
                             </span>
 
+                    <td>
+                        ${escapeHTML(
+                            event.severity
+                        )}
+                    </td>
                         </div>
 
+                    <td>
+                        ${escapeHTML(
+                            event.response_status
+                        )}
+                    </td>
                         <div class="overview-emergency-side">
 
+                </tr>
+            `;
                             <span class="
                                 table-badge
                                 ${getSeverityClass(
@@ -1251,6 +1471,7 @@ function renderOverviewEmergencies(events) {
                                 )}
                             </span>
 
+        }).join("");
                             <small>
                                 ${formatRelativeTime(
                                     event.detected_at
@@ -1270,12 +1491,17 @@ function renderOverviewEmergencies(events) {
 // LOAD USER REPORTS
 // =====================================================
 
+async function loadUserReports() {
+
+    const table =
+        document.getElementById("reportsTable");
 let cachedReports = [];
 
 
+    if (!table) {
+        return;
+    }
 async function loadUserReports() {
-
-    console.log("Loading LICAS user reports...");
 
     const table =
         document.getElementById(
@@ -1288,6 +1514,9 @@ async function loadUserReports() {
             .select("*")
             .order(
                 "reported_at",
+                { ascending: false }
+            );
+
                 {
                     ascending: false
                 }
@@ -1296,19 +1525,24 @@ async function loadUserReports() {
 
     if (error) {
 
-        console.error(
-            "USER REPORT DATABASE ERROR:",
+@@ -896,41 +1248,41 @@ async function loadUserReports() {
             error
         );
 
+        table.innerHTML = `
+            <tr>
+                <td
+                    colspan="5"
+                    class="table-empty"
+                >
+                    Unable to load user reports.
+                </td>
+            </tr>
+        `;
         if (table) {
-
             table.innerHTML = `
                 <tr>
-                    <td
-                        colspan="5"
-                        class="table-empty"
-                    >
+                    <td colspan="5" class="table-empty">
                         Unable to load user reports.
                     </td>
                 </tr>
@@ -1321,60 +1555,80 @@ async function loadUserReports() {
     cachedReports =
         data || [];
 
-    updateUserReportCount();
+    const userReports =
+        document.getElementById(
+            "userReports"
+        );
+
+
+    if (userReports) {
+        userReports.textContent =
+            data.length;
+            cachedReports.length;
+    }
 
     if (!table) {
         return;
     }
 
+    if (!data.length) {
     if (!cachedReports.length) {
 
         table.innerHTML = `
             <tr>
-
                 <td
                     colspan="5"
                     class="table-empty"
                 >
+                <td colspan="5" class="table-empty">
                     No user reports received.
                 </td>
-
             </tr>
-        `;
-
+@@ -939,55 +1291,65 @@ async function loadUserReports() {
         return;
     }
 
+
     table.innerHTML =
+        data.map(report => {
         cachedReports
             .map(report => {
 
-                const reportStatus =
-                    report.status ||
-                    "Pending";
-
+            return `
+                <tr>
                 return `
                     <tr>
 
+                    <td>
+                        ${formatDate(
+                            report.reported_at
+                        )}
+                    </td>
                         <td>
                             ${formatDate(
                                 report.reported_at
                             )}
                         </td>
 
+                    <td>
+                        ${escapeHTML(
+                            report.emergency_type
+                        )}
+                    </td>
                         <td>
-
                             <span class="report-type-badge">
-
                                 ${escapeHTML(
                                     report.emergency_type ||
                                     "Report"
                                 )}
-
                             </span>
-
                         </td>
 
+                    <td>
+                        ${escapeHTML(
+                            report.location
+                        )}
+                    </td>
                         <td>
                             ${escapeHTML(
                                 report.location ||
@@ -1382,426 +1636,45 @@ async function loadUserReports() {
                             )}
                         </td>
 
+                    <td>
+                        ${escapeHTML(
+                            report.description ||
+                            "No description"
+                        )}
+                    </td>
                         <td class="description-cell">
-
                             ${escapeHTML(
                                 report.description ||
                                 "No description"
                             )}
-
                         </td>
 
+                    <td>
+                        ${escapeHTML(
+                            report.status
+                        )}
+                    </td>
                         <td>
-
                             <span class="status-label">
-
                                 ${escapeHTML(
-                                    reportStatus
+                                    report.status ||
+                                    "Pending"
                                 )}
-
                             </span>
-
                         </td>
 
+                </tr>
+            `;
                     </tr>
                 `;
 
+        }).join("");
             }).join("");
 }
 
 
-function updateUserReportCount() {
-
-    const userReports =
-        document.getElementById(
-            "userReports"
-        );
-
-    if (userReports) {
-
-        userReports.textContent =
-            cachedReports.length;
-    }
-}
-
-
 // =====================================================
-// MOBILE REPORT VALIDATION
-// =====================================================
-
-function getMobileReportFields() {
-
-    return {
-        emergencyType:
-            document.getElementById(
-                "mobileEmergencyType"
-            ),
-
-        location:
-            document.getElementById(
-                "mobileLocation"
-            ),
-
-        severity:
-            document.getElementById(
-                "mobileSeverity"
-            ),
-
-        description:
-            document.getElementById(
-                "mobileDescription"
-            ),
-
-        reporterName:
-            document.getElementById(
-                "mobileReporterName"
-            )
-    };
-}
-
-
-// =====================================================
-// MOBILE REPORT SUBMISSION
-// =====================================================
-
-const mobileReportForm =
-    document.getElementById(
-        "mobileReportForm"
-    );
-
-
-if (mobileReportForm) {
-
-    mobileReportForm.addEventListener(
-        "submit",
-        async event => {
-
-            event.preventDefault();
-
-            const fields =
-                getMobileReportFields();
-
-            const submitButton =
-                document.getElementById(
-                    "mobileSubmitReport"
-                );
-
-            const result =
-                document.getElementById(
-                    "mobileReportResult"
-                );
-
-
-            // -----------------------------------------
-            // SAFETY CHECK
-            // -----------------------------------------
-
-            if (
-                !fields.emergencyType ||
-                !fields.location ||
-                !fields.severity ||
-                !fields.description ||
-                !fields.reporterName
-            ) {
-
-                console.error(
-                    "LICAS report form fields are missing."
-                );
-
-                return;
-            }
-
-
-            // -----------------------------------------
-            // READ VALUES
-            // -----------------------------------------
-
-            const emergencyType =
-                fields.emergencyType.value;
-
-            const location =
-                fields.location.value;
-
-            const severity =
-                fields.severity.value;
-
-            const description =
-                fields.description.value.trim();
-
-            const reporterName =
-                fields.reporterName.value.trim();
-
-
-            // -----------------------------------------
-            // VALIDATION
-            // -----------------------------------------
-
-            if (!emergencyType) {
-
-                showReportResult(
-                    result,
-                    "error",
-                    "Please select the emergency type."
-                );
-
-                fields.emergencyType.focus();
-
-                return;
-            }
-
-
-            if (!location) {
-
-                showReportResult(
-                    result,
-                    "error",
-                    "Please select the reporting location."
-                );
-
-                fields.location.focus();
-
-                return;
-            }
-
-
-            if (!severity) {
-
-                showReportResult(
-                    result,
-                    "error",
-                    "Please select the severity."
-                );
-
-                fields.severity.focus();
-
-                return;
-            }
-
-
-            if (!description) {
-
-                showReportResult(
-                    result,
-                    "error",
-                    "Please provide a short description of what happened."
-                );
-
-                fields.description.focus();
-
-                return;
-            }
-
-
-            if (description.length < 5) {
-
-                showReportResult(
-                    result,
-                    "error",
-                    "Please provide a little more detail in the description."
-                );
-
-                fields.description.focus();
-
-                return;
-            }
-
-
-            // -----------------------------------------
-            // DISABLE BUTTON
-            // -----------------------------------------
-
-            submitButton.disabled = true;
-
-            submitButton.textContent =
-                "SENDING REPORT...";
-
-            if (result) {
-                result.hidden = true;
-            }
-
-
-            // -----------------------------------------
-            // DATABASE INSERT
-            // -----------------------------------------
-
-            const reportData = {
-
-                reporter_name:
-                    reporterName ||
-                    null,
-
-                emergency_type:
-                    emergencyType,
-
-                location:
-                    location,
-
-                severity:
-                    severity,
-
-                description:
-                    description,
-
-                status:
-                    "Pending",
-
-                reported_at:
-                    new Date().toISOString()
-            };
-
-
-            console.log(
-                "Submitting LICAS report:",
-                reportData
-            );
-
-
-            const { data, error } =
-                await supabaseClient
-                    .from("user_reports")
-                    .insert([
-                        reportData
-                    ])
-                    .select()
-                    .single();
-
-
-            // -----------------------------------------
-            // DATABASE ERROR
-            // -----------------------------------------
-
-            if (error) {
-
-                console.error(
-                    "REPORT SUBMISSION ERROR:",
-                    error
-                );
-
-                let errorMessage =
-                    "Unable to send the emergency report. Please try again.";
-
-                if (
-                    error.code === "42501" ||
-                    error.message
-                        ?.toLowerCase()
-                        .includes("row-level security")
-                ) {
-
-                    errorMessage =
-                        "The report was blocked by the database security policy.";
-                }
-
-                if (
-                    error.message
-                        ?.toLowerCase()
-                        .includes("column")
-                ) {
-
-                    errorMessage =
-                        "The report could not be saved because the database fields do not match the form.";
-                }
-
-                showReportResult(
-                    result,
-                    "error",
-                    errorMessage
-                );
-
-                submitButton.disabled =
-                    false;
-
-                submitButton.textContent =
-                    "SEND EMERGENCY REPORT";
-
-                return;
-            }
-
-
-            // -----------------------------------------
-            // SUCCESS
-            // -----------------------------------------
-
-            console.log(
-                "LICAS report submitted successfully:",
-                data
-            );
-
-
-            showReportResult(
-                result,
-                "success",
-                "Emergency report sent successfully. Administrators have been notified."
-            );
-
-
-            // Clear form
-            mobileReportForm.reset();
-
-
-            // Re-enable button
-            submitButton.disabled =
-                false;
-
-            submitButton.textContent =
-                "SEND EMERGENCY REPORT";
-
-
-            // -----------------------------------------
-            // UPDATE ADMIN DASHBOARD
-            // -----------------------------------------
-
-            await loadUserReports();
-
-            await loadOverviewActivity();
-
-
-            // -----------------------------------------
-            // RETURN TO HOME
-            // -----------------------------------------
-
-            setTimeout(() => {
-
-                showMobilePage(
-                    "mobileHomePage",
-                    "mobileHomeNav"
-                );
-
-                if (result) {
-                    result.hidden = true;
-                }
-
-            }, 2200);
-
-        }
-    );
-}
-
-
-// =====================================================
-// REPORT RESULT MESSAGE
-// =====================================================
-
-function showReportResult(
-    result,
-    type,
-    message
-) {
-
-    if (!result) {
-        return;
-    }
-
-    result.hidden = false;
-
-    result.className =
-        `mobile-result ${type}`;
-
-    result.textContent =
-        message;
-}
-
-
-// =====================================================
+// LOAD OFFICIAL ALERTS
 // LOAD OFFICIAL / EXTERNAL ALERTS
 // =====================================================
 
@@ -1811,14 +1684,10 @@ let cachedAlerts = [];
 async function loadOfficialAlerts() {
 
     const desktopContainer =
-        document.getElementById(
-            "alertsContainer"
-        );
-
-    const mobileContainer =
-        document.getElementById(
+@@ -1000,16 +1362,17 @@ async function loadOfficialAlerts() {
             "mobileAlertsList"
         );
+
 
     const { data, error } =
         await supabaseClient
@@ -1826,6 +1695,9 @@ async function loadOfficialAlerts() {
             .select("*")
             .order(
                 "issued_at",
+                { ascending: false }
+            );
+
                 {
                     ascending: false
                 }
@@ -1834,26 +1706,17 @@ async function loadOfficialAlerts() {
 
     if (error) {
 
-        console.error(
-            "OFFICIAL ALERT DATABASE ERROR:",
+@@ -1018,246 +1381,639 @@ async function loadOfficialAlerts() {
             error
         );
 
         const message = `
             <div class="empty-state panel-empty">
-
-                <div class="empty-icon">
-                    !
-                </div>
-
-                <strong>
-                    Unable to load alerts
-                </strong>
-
+                <div class="empty-icon">!</div>
+                <strong>Unable to load alerts</strong>
                 <span>
                     Please check the system connection.
                 </span>
-
             </div>
         `;
 
@@ -1861,6 +1724,12 @@ async function loadOfficialAlerts() {
             desktopContainer.innerHTML =
                 message;
         }
+
+            desktopContainer.innerHTML = `
+                <div class="empty-state panel-empty">
+                    Unable to load official alerts.
+                </div>
+            `;
 
         if (mobileContainer) {
             mobileContainer.innerHTML =
@@ -1870,25 +1739,34 @@ async function loadOfficialAlerts() {
         return;
     }
 
+        if (mobileContainer) {
     cachedAlerts =
         data || [];
 
+            mobileContainer.innerHTML = `
+                <div class="mobile-empty-alerts">
     const externalAlerts =
         document.getElementById(
             "externalAlerts"
         );
 
+                    <div>!</div>
     if (externalAlerts) {
-
         externalAlerts.textContent =
             cachedAlerts.length;
     }
 
+                    <strong>
+                        Unable to load alerts
+                    </strong>
     renderDesktopAlerts(
         desktopContainer,
         cachedAlerts
     );
 
+                    <span>
+                        Please check the system connection.
+                    </span>
     renderMobileAlerts(
         mobileContainer,
         cachedAlerts
@@ -2011,7 +1889,6 @@ function renderDesktopAlerts(
 
                             <div>
                                 <span>Source</span>
-
                                 <strong>
                                     ${escapeHTML(
                                         alert.source ||
@@ -2022,7 +1899,6 @@ function renderDesktopAlerts(
 
                             <div>
                                 <span>Type</span>
-
                                 <strong>
                                     ${escapeHTML(
                                         alert.alert_type ||
@@ -2033,7 +1909,6 @@ function renderDesktopAlerts(
 
                             <div>
                                 <span>Location</span>
-
                                 <strong>
                                     ${escapeHTML(
                                         alert.location ||
@@ -2044,7 +1919,6 @@ function renderDesktopAlerts(
 
                             <div>
                                 <span>Issued</span>
-
                                 <strong>
                                     ${formatDate(
                                         alert.issued_at
@@ -2055,12 +1929,10 @@ function renderDesktopAlerts(
                         </div>
 
                         <p class="alert-description">
-
                             ${escapeHTML(
                                 alert.description ||
                                 "No additional information."
                             )}
-
                         </p>
 
                     </div>
@@ -2068,11 +1940,9 @@ function renderDesktopAlerts(
                     <div class="alert-card-footer">
 
                         <span>
-                            ${
-                                classification === "Community Report"
-                                    ? "Reported through LICAS"
-                                    : "Information displayed from external source"
-                            }
+                            ${classification === "Community Report"
+                                ? "Reported through LICAS"
+                                : "Information displayed from external source"}
                         </span>
 
                         ${getSourceLink(alert)}
@@ -2082,6 +1952,7 @@ function renderDesktopAlerts(
                 </article>
             `;
 
+        }
         }).join("");
 }
 
@@ -2104,9 +1975,7 @@ function renderMobileAlerts(
         container.innerHTML = `
             <div class="mobile-empty-alerts">
 
-                <div>
-                    ✓
-                </div>
+                <div>✓</div>
 
                 <strong>
                     No alerts recorded
@@ -2188,6 +2057,8 @@ function renderMobileAlerts(
 
                     </div>
 
+    const alertCount =
+        data.length;
                     <p>
                         ${escapeHTML(
                             alert.description ||
@@ -2198,48 +2069,33 @@ function renderMobileAlerts(
                     <div class="mobile-alert-details">
 
                         <div>
-
-                            <span>
-                                Source
-                            </span>
-
+                            <span>Source</span>
                             <strong>
                                 ${escapeHTML(
                                     alert.source ||
                                     "Unknown"
                                 )}
                             </strong>
-
                         </div>
 
                         <div>
-
-                            <span>
-                                Type
-                            </span>
-
+                            <span>Type</span>
                             <strong>
                                 ${escapeHTML(
                                     alert.alert_type ||
                                     "Advisory"
                                 )}
                             </strong>
-
                         </div>
 
                         <div>
-
-                            <span>
-                                Location
-                            </span>
-
+                            <span>Location</span>
                             <strong>
                                 ${escapeHTML(
                                     alert.location ||
                                     "Not specified"
                                 )}
                             </strong>
-
                         </div>
 
                     </div>
@@ -2254,237 +2110,329 @@ function renderMobileAlerts(
 
                         ${getSourceLink(alert)}
 
+    const externalAlerts =
+        document.getElementById(
+            "externalAlerts"
+        );
                     </div>
 
                 </article>
             `;
 
+    if (externalAlerts) {
         }).join("");
 }
 
+        externalAlerts.textContent =
+            alertCount;
 
+    }
 // =====================================================
 // ALERT PREVIEW
 // =====================================================
 
 function updateAlertPreview(alerts) {
 
+    /*
+       DESKTOP
+    */
     const previewTitle =
         document.getElementById(
             "mobileAlertPreviewTitle"
         );
 
+    if (desktopContainer) {
     const previewText =
         document.getElementById(
             "mobileAlertPreviewText"
         );
 
+        if (!data.length) {
     if (!previewTitle || !previewText) {
         return;
     }
 
+            desktopContainer.innerHTML = `
+                <div class="empty-state panel-empty">
     if (!alerts.length) {
 
+                    <div class="empty-icon">
+                        ✓
+                    </div>
         previewTitle.textContent =
             "No current alerts";
 
+                    <strong>
+                        No official alerts
+                    </strong>
         previewText.textContent =
             "Official advisories and local announcements will appear here.";
 
+                    <span>
+                        No official advisories are currently recorded.
+                    </span>
         return;
     }
 
+                </div>
+            `;
     const first =
         alerts[0];
 
+        } else {
     previewTitle.textContent =
         first.title ||
         "New official information";
 
+            desktopContainer.innerHTML =
+                data.map(alert => {
     previewText.textContent =
         `${first.source || "External source"} · ${
             first.alert_type || "Advisory"
         }`;
 }
 
+                    return `
+                        <div class="alert-card">
 
+                            <h4>
+                                ${escapeHTML(
+                                    alert.title
+                                )}
+                            </h4>
 // =====================================================
 // OVERVIEW RECENT ACTIVITY
 // =====================================================
 
+                            <p>
 async function loadOverviewActivity() {
 
+                                <strong>
+                                    ${escapeHTML(
+                                        alert.source
+                                    )}
+                                </strong>
     const container =
         document.getElementById(
             "overviewActivity"
         );
 
+                                ·
     if (!container) {
         return;
     }
 
+                                ${escapeHTML(
+                                    alert.alert_type
+                                )}
+    const emergency =
+        cachedEmergencyEvents[0];
+
+                            </p>
+    const report =
+        cachedReports[0];
+
+                            <p>
+                                ${escapeHTML(
+                                    alert.description ||
+                                    "No additional information."
+                                )}
+                            </p>
+    const alert =
+        cachedAlerts[0];
+
+                            <p>
+                                Issued:
+                                ${formatDate(
+                                    alert.issued_at
+                                )}
+                            </p>
     const activities = [];
 
+                        </div>
+                    `;
+    if (emergency) {
 
-    if (cachedEmergencyEvents.length) {
-
-        const emergency =
-            cachedEmergencyEvents[0];
-
+                }).join("");
+        }
         activities.push({
             type: "Emergency",
-
             title:
                 emergency.emergency_type ||
                 "Emergency event",
-
             description:
                 "Monitoring unit detected an emergency event.",
-
             time:
                 emergency.detected_at,
-
-            icon:
-                "🚨"
+            icon: "🚨"
         });
     }
 
-
-    if (cachedReports.length) {
-
-        const report =
-            cachedReports[0];
+    if (report) {
 
         activities.push({
             type: "Report",
-
             title:
                 report.emergency_type ||
                 "Community report",
-
             description:
                 report.location ||
                 "Location provided by reporter.",
-
             time:
                 report.reported_at,
-
-            icon:
-                "▤"
+            icon: "▤"
         });
     }
 
+    /*
+       MOBILE
+    */
 
-    if (cachedAlerts.length) {
+    if (mobileContainer) {
 
-        const alert =
-            cachedAlerts[0];
+        if (!data.length) {
+    if (alert) {
 
         activities.push({
             type:
-                getAlertClassification(
-                    alert
-                ),
-
+                getAlertClassification(alert),
             title:
                 alert.title ||
                 "External alert",
-
             description:
                 alert.source ||
                 "External source",
-
             time:
                 alert.issued_at,
-
-            icon:
-                "⚠"
+            icon: "⚠"
         });
     }
 
-
+            mobileContainer.innerHTML = `
+                <div class="mobile-empty-alerts">
     activities.sort(
         (a, b) =>
             new Date(b.time) -
             new Date(a.time)
     );
 
-
+                    <div>✓</div>
     if (!activities.length) {
 
+                    <strong>
+                        No active official alerts
+                    </strong>
         container.innerHTML = `
             <div class="empty-state compact-empty">
-
-                <strong>
-                    No recent activity
-                </strong>
-
+                <strong>No recent activity</strong>
                 <span>
                     New system activity will appear here.
                 </span>
-
             </div>
         `;
 
+                    <span>
+                        Official PHIVOLCS and NDRRMC
+                        advisories will appear here.
+                    </span>
         return;
     }
 
-
+                </div>
+            `;
     container.innerHTML =
         activities
             .slice(0, 6)
             .map(activity => {
 
+        } else {
                 return `
                     <div class="activity-row">
 
+            mobileContainer.innerHTML =
+                data.map(alert => {
                         <div class="activity-icon">
                             ${activity.icon}
                         </div>
 
+                    return `
+                        <article
+                            class="mobile-official-alert"
+                        >
                         <div class="activity-content">
 
+                            <h3>
                             <strong>
                                 ${escapeHTML(
+                                    alert.title
                                     activity.title
                                 )}
+                            </h3>
                             </strong>
 
+                            <p>
                             <span>
                                 ${escapeHTML(
                                     activity.type
                                 )}
                                 ·
                                 ${escapeHTML(
+                                    alert.description ||
+                                    "No additional information."
                                     activity.description
                                 )}
+                            </p>
                             </span>
 
+                            <div class="alert-meta">
                         </div>
 
+                                <span>
+                                    ${escapeHTML(
+                                        alert.source
+                                    )}
+                                </span>
                         <small>
                             ${formatRelativeTime(
                                 activity.time
                             )}
                         </small>
 
+                                <span>
+                                    ${formatDate(
+                                        alert.issued_at
+                                    )}
+                                </span>
                     </div>
                 `;
 
+                            </div>
             }).join("");
 }
 
+                        </article>
+                    `;
 
+                }).join("");
+        }
+    }
 // =====================================================
 // DASHBOARD REFRESH
 // =====================================================
 
 async function loadDashboard() {
 
+    /*
+       HOME PREVIEW
+    */
     console.log(
         "Refreshing LICAS dashboard..."
     );
 
+    const previewTitle =
+        document.getElementById(
+            "mobileAlertPreviewTitle"
+        );
     await Promise.all([
         loadUnits(),
         loadLatestSensorReadings(),
@@ -2493,16 +2441,18 @@ async function loadDashboard() {
         loadOfficialAlerts()
     ]);
 
+    const previewText =
     await loadOverviewActivity();
-
 
     const lastUpdate =
         document.getElementById(
+            "mobileAlertPreviewText"
             "lastUpdate"
         );
 
     if (lastUpdate) {
 
+    if (previewTitle && previewText) {
         lastUpdate.textContent =
             new Date().toLocaleTimeString(
                 "en-PH",
@@ -2514,22 +2464,34 @@ async function loadDashboard() {
             );
     }
 
-
+        if (!data.length) {
     updateMobileConnectionStatus();
 }
 
+            previewTitle.textContent =
+                "No active official alerts";
 
+            previewText.textContent =
+                "PHIVOLCS / NDRRMC advisories will appear here.";
 // =====================================================
 // MOBILE CONNECTION STATUS
 // =====================================================
 
+        } else {
 function updateMobileConnectionStatus() {
 
+            previewTitle.textContent =
+                `${data.length} official alert${
+                    data.length === 1 ? "" : "s"
+                } available`;
     const element =
         document.getElementById(
             "mobileConnectionStatus"
         );
 
+            previewText.textContent =
+                data[0].title;
+        }
     if (!element) {
         return;
     }
@@ -2539,25 +2501,15 @@ function updateMobileConnectionStatus() {
 }
 
 
-// =====================================================
-// MOBILE NAVIGATION
-// =====================================================
-
-function showMobilePage(
-    pageId,
-    navId
-) {
-
-    const mobilePages =
-        document.querySelectorAll(
+@@ -1275,7 +2031,6 @@ function showMobilePage(
             ".mobile-page"
         );
+
 
     mobilePages.forEach(page => {
 
         page.classList.remove(
-            "active-mobile-page"
-        );
+@@ -1284,33 +2039,25 @@ function showMobilePage(
 
     });
 
@@ -2571,6 +2523,7 @@ function showMobilePage(
         target.classList.add(
             "active-mobile-page"
         );
+
     }
 
 
@@ -2581,18 +2534,20 @@ function showMobilePage(
 
 
     navItems.forEach(item => {
+
         item.classList.remove("active");
+
     });
 
 
     if (navId) {
 
         const nav =
-            document.getElementById(navId);
-
+@@ -1319,26 +2066,21 @@ function showMobilePage(
         if (nav) {
             nav.classList.add("active");
         }
+
     }
 
 
@@ -2605,153 +2560,294 @@ function showMobilePage(
     if (pageId === "mobileAlertsPage") {
 
         loadOfficialAlerts();
+
     }
 }
 
 
 // =====================================================
+// MOBILE HOME NAVIGATION
 // MOBILE NAV EVENTS
 // =====================================================
 
 document
-    .getElementById("mobileHomeNav")
-    ?.addEventListener(
-        "click",
-        () => {
-
-            showMobilePage(
-                "mobileHomePage",
-                "mobileHomeNav"
-            );
-
-        }
+@@ -1356,10 +2098,6 @@ document
     );
 
+
+// =====================================================
+// MOBILE REPORT BUTTON
+// =====================================================
 
 document
     .getElementById("mobileReportButton")
     ?.addEventListener(
-        "click",
-        () => {
-
-            showMobilePage(
-                "mobileReportPage",
-                "mobileReportNav"
-            );
-
-        }
+@@ -1375,10 +2113,6 @@ document
     );
 
+
+// =====================================================
+// MOBILE REPORT NAV
+// =====================================================
 
 document
     .getElementById("mobileReportNav")
     ?.addEventListener(
-        "click",
-        () => {
-
-            showMobilePage(
-                "mobileReportPage",
-                "mobileReportNav"
-            );
-
-        }
+@@ -1394,10 +2128,6 @@ document
     );
 
+
+// =====================================================
+// MOBILE REPORT BACK
+// =====================================================
 
 document
     .getElementById("mobileReportBack")
     ?.addEventListener(
-        "click",
-        () => {
-
-            showMobilePage(
-                "mobileHomePage",
-                "mobileHomeNav"
-            );
-
-        }
+@@ -1413,10 +2143,6 @@ document
     );
 
+
+// =====================================================
+// MOBILE ALERT CARD
+// =====================================================
 
 document
     .getElementById("mobileAlertsButton")
     ?.addEventListener(
-        "click",
-        () => {
-
-            showMobilePage(
-                "mobileAlertsPage",
-                "mobileAlertsNav"
-            );
-
-        }
+@@ -1432,10 +2158,6 @@ document
     );
 
+
+// =====================================================
+// MOBILE ALERT NAV
+// =====================================================
 
 document
     .getElementById("mobileAlertsNav")
     ?.addEventListener(
-        "click",
-        () => {
-
-            showMobilePage(
-                "mobileAlertsPage",
-                "mobileAlertsNav"
-            );
-
-        }
+@@ -1451,10 +2173,6 @@ document
     );
 
+
+// =====================================================
+// MOBILE ALERT BACK
+// =====================================================
 
 document
     .getElementById("mobileAlertsBack")
     ?.addEventListener(
-        "click",
-        () => {
+@@ -1479,7 +2197,6 @@ const mobileReportForm =
+        "mobileReportForm"
+    );
 
-            showMobilePage(
-                "mobileHomePage",
-                "mobileHomeNav"
-            );
+
+if (mobileReportForm) {
+
+    mobileReportForm.addEventListener(
+@@ -1488,7 +2205,6 @@ if (mobileReportForm) {
+
+            event.preventDefault();
+
+
+            const submitButton =
+                document.getElementById(
+                    "mobileSubmitReport"
+@@ -1499,7 +2215,6 @@ if (mobileReportForm) {
+                    "mobileReportResult"
+                );
+
+
+            const emergencyType =
+                document.getElementById(
+                    "mobileEmergencyType"
+@@ -1525,27 +2240,21 @@ if (mobileReportForm) {
+                    "mobileReporterName"
+                ).value.trim();
+
+
+            submitButton.disabled = true;
+
+            submitButton.textContent =
+                "SENDING REPORT...";
+
+
+            result.hidden = true;
+
+            result.className =
+                "mobile-result";
+
+
+            const { error } =
+                await supabaseClient
+                    .from("user_reports")
+                    .insert([
+                        {
+
+                            reporter_name:
+                                reporterName || null,
+                                reporterName ||
+                                null,
+
+                            emergency_type:
+                                emergencyType,
+@@ -1554,23 +2263,21 @@ if (mobileReportForm) {
+                                location,
+
+                            description:
+                                description || null,
+                                description ||
+                                null,
+
+                            status:
+                                "Pending"
+
+                        }
+                    ]);
+
+
+            if (error) {
+
+                console.error(
+                    "REPORT SUBMISSION ERROR:",
+                    error
+                );
+
+
+                result.hidden = false;
+
+                result.className =
+@@ -1579,7 +2286,6 @@ if (mobileReportForm) {
+                result.textContent =
+                    "Unable to send the emergency report. Please try again.";
+
+
+                submitButton.disabled = false;
+
+                submitButton.textContent =
+@@ -1588,11 +2294,6 @@ if (mobileReportForm) {
+                return;
+            }
+
+
+            /*
+               SUCCESS
+            */
+
+            result.hidden = false;
+
+            result.className =
+@@ -1601,27 +2302,15 @@ if (mobileReportForm) {
+            result.textContent =
+                "Emergency report sent successfully. Administrators have been notified.";
+
+
+            mobileReportForm.reset();
+
+
+            submitButton.disabled = false;
+
+            submitButton.textContent =
+                "SEND EMERGENCY REPORT";
+
+
+            /*
+               Update admin report count.
+            */
+
+            await loadUserReports();
+
+
+            /*
+               Return to home after a short delay.
+            */
+
+            setTimeout(() => {
+
+                showMobilePage(
+@@ -1632,54 +2321,11 @@ if (mobileReportForm) {
+                result.hidden = true;
+
+            }, 2200);
 
         }
     );
+}
+
+
+// =====================================================
+// DASHBOARD REFRESH
+// =====================================================
+
+async function loadDashboard() {
+
+    console.log(
+        "Refreshing LICAS dashboard..."
+    );
+
+
+    await Promise.all([
+
+        loadUnits(),
+
+        loadLatestSensorReadings(),
+
+        loadEmergencyEvents(),
+
+        loadUserReports(),
+
+        loadOfficialAlerts()
+
+    ]);
+
+
+    const lastUpdate =
+        document.getElementById(
+            "lastUpdate"
+        );
+
+
+    if (lastUpdate) {
+
+        lastUpdate.textContent =
+            "Just now";
+
+    }
+
+}
 
 
 // =====================================================
 // REFRESH BUTTON
 // =====================================================
-
-document
-    .getElementById("refreshDashboard")
-    ?.addEventListener(
-        "click",
-        loadDashboard
-    );
-
-
-// =====================================================
-// INITIAL LOAD
-// =====================================================
-
+@@ -1699,24 +2345,48 @@ document
 loadDashboard();
 
 
+console.log(
+    "LICAS system initialized."
+);
+
+
 // =====================================================
+// LIVE SENSOR REFRESH
 // LIVE DATABASE REFRESH
 // =====================================================
-
-// Unit cards and sensor readings every 5 seconds.
+//
+// Unit cards and latest readings refresh every 5 seconds.
+// This means the dashboard can reflect new ESP32 data
+// without requiring a manual browser refresh.
+//
 
 setInterval(
     async () => {
 
         console.log(
+            "Live sensor refresh..."
             "Live LICAS database refresh..."
         );
 
         await loadUnits();
-
         await loadLatestSensorReadings();
 
     },
@@ -2759,7 +2855,7 @@ setInterval(
 );
 
 
-// Broader information every 15 seconds.
+// Refresh broader information every 15 seconds.
 
 setInterval(
     async () => {
@@ -2780,4 +2876,3 @@ setInterval(
 console.log(
     "LICAS system initialized."
 );
-```
