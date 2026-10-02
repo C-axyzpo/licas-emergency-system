@@ -20,10 +20,6 @@ const supabaseClient = supabase.createClient(
 // CONFIGURATION
 // =====================================================
 
-// A unit is considered connected only if its ESP32
-// has updated last_seen within this period.
-//
-// Adjust this if your ESP32 heartbeat interval changes.
 const UNIT_ONLINE_WINDOW_MS = 60 * 1000;
 
 
@@ -375,6 +371,11 @@ navButtons.forEach(button => {
         if (targetPage === "units") {
             await loadUnits();
             await loadLatestSensorReadings();
+        }
+
+        if (targetPage === "notifications") {
+            await loadRegisteredStudents();
+            await loadNotifications();
         }
     });
 });
@@ -1595,9 +1596,11 @@ function renderDesktopAlerts(
                     <div class="alert-card-footer">
 
                         <span>
-                            ${classification === "Community Report"
-                                ? "Reported through LICAS"
-                                : "Information displayed from external source"}
+                            ${
+                                classification === "Community Report"
+                                    ? "Reported through LICAS"
+                                    : "Information displayed from external source"
+                            }
                         </span>
 
                         ${getSourceLink(alert)}
@@ -1952,6 +1955,616 @@ async function loadOverviewActivity() {
                 `;
 
             }).join("");
+}
+
+
+// =====================================================
+// NOTIFICATIONS
+// =====================================================
+
+let cachedRegisteredStudents = [];
+let cachedNotifications = [];
+
+
+// -----------------------------------------------------
+// LOAD REGISTERED STUDENTS
+// -----------------------------------------------------
+
+async function loadRegisteredStudents() {
+
+    const studentList =
+        document.getElementById(
+            "studentList"
+        );
+
+    const { data, error } =
+        await supabaseClient
+            .from("registered_students")
+            .select(`
+                id,
+                full_name,
+                student_id,
+                grade_section,
+                messenger_id,
+                is_active
+            `)
+            .eq(
+                "is_active",
+                true
+            )
+            .order(
+                "full_name",
+                {
+                    ascending: true
+                }
+            );
+
+    if (error) {
+
+        console.error(
+            "REGISTERED STUDENTS DATABASE ERROR:",
+            error
+        );
+
+        if (studentList) {
+            studentList.innerHTML = `
+                <option value="">
+                    Unable to load registered students
+                </option>
+            `;
+        }
+
+        return [];
+    }
+
+    cachedRegisteredStudents =
+        data || [];
+
+    if (!studentList) {
+        return cachedRegisteredStudents;
+    }
+
+    if (!cachedRegisteredStudents.length) {
+
+        studentList.innerHTML = `
+            <option value="">
+                No registered students found
+            </option>
+        `;
+
+        return cachedRegisteredStudents;
+    }
+
+    studentList.innerHTML =
+        cachedRegisteredStudents
+            .map(student => {
+
+                const studentID =
+                    student.student_id
+                    ? ` · ${student.student_id}`
+                    : "";
+
+                const section =
+                    student.grade_section
+                    ? ` · ${student.grade_section}`
+                    : "";
+
+                return `
+                    <option value="${escapeHTML(student.id)}">
+                        ${escapeHTML(student.full_name)}
+                        ${escapeHTML(studentID)}
+                        ${escapeHTML(section)}
+                    </option>
+                `;
+
+            })
+            .join("");
+
+    return cachedRegisteredStudents;
+}
+
+
+// -----------------------------------------------------
+// LOAD NOTIFICATION HISTORY
+// -----------------------------------------------------
+
+async function loadNotifications() {
+
+    const container =
+        document.getElementById(
+            "notificationHistory"
+        );
+
+    const { data, error } =
+        await supabaseClient
+            .from("notifications")
+            .select("*")
+            .order(
+                "created_at",
+                {
+                    ascending: false
+                }
+            )
+            .limit(50);
+
+    if (error) {
+
+        console.error(
+            "NOTIFICATIONS DATABASE ERROR:",
+            error
+        );
+
+        if (container) {
+            container.innerHTML = `
+                <div class="empty-state compact-empty">
+                    <strong>Unable to load notification history</strong>
+                    <span>
+                        Please check the database connection.
+                    </span>
+                </div>
+            `;
+        }
+
+        return [];
+    }
+
+    cachedNotifications =
+        data || [];
+
+    if (!container) {
+        return cachedNotifications;
+    }
+
+    if (!cachedNotifications.length) {
+
+        container.innerHTML = `
+            <div class="empty-state compact-empty">
+                <strong>No notifications yet</strong>
+                <span>
+                    Notifications created from the dashboard will appear here.
+                </span>
+            </div>
+        `;
+
+        return cachedNotifications;
+    }
+
+    container.innerHTML =
+        cachedNotifications
+            .map(notification => {
+
+                const recipientMode =
+                    notification.recipient_mode === "selected"
+                        ? "Selected students"
+                        : "All registered students";
+
+                const status =
+                    notification.status ||
+                    "Pending";
+
+                const statusClass =
+                    String(status)
+                        .toLowerCase()
+                        .replace(/\s+/g, "-");
+
+                return `
+                    <article class="notification-history-item">
+
+                        <div class="notification-history-top">
+
+                            <div>
+                                <strong>
+                                    ${escapeHTML(
+                                        notification.title ||
+                                        "Untitled notification"
+                                    )}
+                                </strong>
+
+                                <span>
+                                    ${escapeHTML(
+                                        notification.emergency_type ||
+                                        "General Announcement"
+                                    )}
+                                </span>
+                            </div>
+
+                            <span class="
+                                notification-status
+                                ${escapeHTML(statusClass)}
+                            ">
+                                ${escapeHTML(status)}
+                            </span>
+
+                        </div>
+
+                        <p>
+                            ${escapeHTML(
+                                notification.message ||
+                                "No message."
+                            )}
+                        </p>
+
+                        <div class="notification-history-meta">
+
+                            <span>
+                                ${escapeHTML(
+                                    recipientMode
+                                )}
+                            </span>
+
+                            ${
+                                notification.location
+                                    ? `
+                                        <span>
+                                            ${escapeHTML(
+                                                notification.location
+                                            )}
+                                        </span>
+                                    `
+                                    : ""
+                            }
+
+                            <span>
+                                ${formatDate(
+                                    notification.created_at
+                                )}
+                            </span>
+
+                        </div>
+
+                    </article>
+                `;
+
+            })
+            .join("");
+
+    return cachedNotifications;
+}
+
+
+// -----------------------------------------------------
+// RECIPIENT MODE
+// -----------------------------------------------------
+
+function setupNotificationRecipientMode() {
+
+    const radios =
+        document.querySelectorAll(
+            'input[name="recipientMode"]'
+        );
+
+    const studentSelection =
+        document.getElementById(
+            "studentSelection"
+        );
+
+    const studentList =
+        document.getElementById(
+            "studentList"
+        );
+
+    if (!radios.length) {
+        return;
+    }
+
+    radios.forEach(radio => {
+
+        radio.addEventListener(
+            "change",
+            async () => {
+
+                const selected =
+                    document.querySelector(
+                        'input[name="recipientMode"]:checked'
+                    )?.value;
+
+                if (!studentSelection) {
+                    return;
+                }
+
+                if (selected === "selected") {
+
+                    studentSelection.classList.remove(
+                        "hidden"
+                    );
+
+                    await loadRegisteredStudents();
+
+                } else {
+
+                    studentSelection.classList.add(
+                        "hidden"
+                    );
+
+                    if (studentList) {
+                        studentList.selectedIndex = -1;
+                    }
+                }
+            }
+        );
+    });
+}
+
+
+// -----------------------------------------------------
+// NOTIFICATION RESULT
+// -----------------------------------------------------
+
+function showNotificationResult(
+    message,
+    type = "success"
+) {
+
+    const result =
+        document.getElementById(
+            "notificationResult"
+        );
+
+    if (!result) {
+        return;
+    }
+
+    result.hidden = false;
+
+    result.className =
+        `notification-result ${type}`;
+
+    result.textContent =
+        message;
+}
+
+
+// -----------------------------------------------------
+// SEND / CREATE NOTIFICATION
+// -----------------------------------------------------
+
+async function handleNotificationSubmit() {
+
+    const titleInput =
+        document.getElementById(
+            "notificationTitle"
+        );
+
+    const typeInput =
+        document.getElementById(
+            "notificationType"
+        );
+
+    const locationInput =
+        document.getElementById(
+            "notificationLocation"
+        );
+
+    const messageInput =
+        document.getElementById(
+            "notificationMessage"
+        );
+
+    const sendButton =
+        document.getElementById(
+            "sendNotificationButton"
+        );
+
+    const title =
+        titleInput?.value.trim() || "";
+
+    const emergencyType =
+        typeInput?.value || "";
+
+    const location =
+        locationInput?.value.trim() || "";
+
+    const message =
+        messageInput?.value.trim() || "";
+
+    const recipientMode =
+        document.querySelector(
+            'input[name="recipientMode"]:checked'
+        )?.value || "all";
+
+    if (!title) {
+
+        showNotificationResult(
+            "Please enter an announcement title.",
+            "error"
+        );
+
+        titleInput?.focus();
+
+        return;
+    }
+
+    if (!message) {
+
+        showNotificationResult(
+            "Please enter a message.",
+            "error"
+        );
+
+        messageInput?.focus();
+
+        return;
+    }
+
+    let selectedStudentIds = [];
+
+    if (recipientMode === "selected") {
+
+        const studentList =
+            document.getElementById(
+                "studentList"
+            );
+
+        if (!studentList) {
+
+            showNotificationResult(
+                "The student selection list is unavailable.",
+                "error"
+            );
+
+            return;
+        }
+
+        selectedStudentIds =
+            Array.from(
+                studentList.selectedOptions
+            )
+            .map(option => option.value)
+            .filter(value => value);
+
+        if (!selectedStudentIds.length) {
+
+            showNotificationResult(
+                "Please select at least one student.",
+                "error"
+            );
+
+            studentList.focus();
+
+            return;
+        }
+    }
+
+    if (sendButton) {
+
+        sendButton.disabled = true;
+
+        sendButton.textContent =
+            "SAVING NOTIFICATION...";
+    }
+
+    const notificationData = {
+        title: title,
+        message: message,
+        emergency_type:
+            emergencyType || null,
+        location:
+            location || null,
+        recipient_mode:
+            recipientMode,
+        recipient_ids:
+            selectedStudentIds,
+        status:
+            "Pending"
+    };
+
+    const { error } =
+        await supabaseClient
+            .from("notifications")
+            .insert([
+                notificationData
+            ]);
+
+    if (error) {
+
+        console.error(
+            "NOTIFICATION INSERT ERROR:",
+            error
+        );
+
+        showNotificationResult(
+            "Unable to create the notification. Please try again.",
+            "error"
+        );
+
+        if (sendButton) {
+
+            sendButton.disabled = false;
+
+            sendButton.textContent =
+                "📢 Send Notification";
+        }
+
+        return;
+    }
+
+    showNotificationResult(
+        "Notification created successfully and queued for delivery.",
+        "success"
+    );
+
+    if (titleInput) {
+        titleInput.value = "";
+    }
+
+    if (typeInput) {
+        typeInput.value = "";
+    }
+
+    if (locationInput) {
+        locationInput.value = "";
+    }
+
+    if (messageInput) {
+        messageInput.value = "";
+    }
+
+    const allRadio =
+        document.querySelector(
+            'input[name="recipientMode"][value="all"]'
+        );
+
+    if (allRadio) {
+        allRadio.checked = true;
+    }
+
+    const studentSelection =
+        document.getElementById(
+            "studentSelection"
+        );
+
+    if (studentSelection) {
+        studentSelection.classList.add(
+            "hidden"
+        );
+    }
+
+    const studentList =
+        document.getElementById(
+            "studentList"
+        );
+
+    if (studentList) {
+
+        Array.from(
+            studentList.options
+        ).forEach(option => {
+            option.selected = false;
+        });
+    }
+
+    if (sendButton) {
+
+        sendButton.disabled = false;
+
+        sendButton.textContent =
+            "📢 Send Notification";
+    }
+
+    await loadNotifications();
+}
+
+
+// -----------------------------------------------------
+// NOTIFICATION EVENT SETUP
+// -----------------------------------------------------
+
+function setupNotificationSystem() {
+
+    setupNotificationRecipientMode();
+
+    const sendButton =
+        document.getElementById(
+            "sendNotificationButton"
+        );
+
+    if (sendButton) {
+
+        sendButton.addEventListener(
+            "click",
+            handleNotificationSubmit
+        );
+    }
 }
 
 
@@ -2339,8 +2952,10 @@ document
 
 
 // =====================================================
-// INITIAL LOAD
+// INITIALIZATION
 // =====================================================
+
+setupNotificationSystem();
 
 loadDashboard();
 
@@ -2348,11 +2963,8 @@ loadDashboard();
 // =====================================================
 // LIVE DATABASE REFRESH
 // =====================================================
-//
+
 // Unit cards and latest readings refresh every 5 seconds.
-// This means the dashboard can reflect new ESP32 data
-// without requiring a manual browser refresh.
-//
 
 setInterval(
     async () => {
@@ -2381,6 +2993,35 @@ setInterval(
         ]);
 
         await loadOverviewActivity();
+
+    },
+    15000
+);
+
+
+// =====================================================
+// NOTIFICATION REFRESH
+// =====================================================
+
+// Keep notification history reasonably current
+// while the Notifications page is open.
+
+setInterval(
+    async () => {
+
+        const notificationPage =
+            document.getElementById(
+                "notifications"
+            );
+
+        if (
+            notificationPage &&
+            notificationPage.classList.contains(
+                "active-page"
+            )
+        ) {
+            await loadNotifications();
+        }
 
     },
     15000
